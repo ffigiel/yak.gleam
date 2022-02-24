@@ -9,6 +9,7 @@ import gleam/http.{Get}
 pub fn stack() {
   service
   |> service.map_response_body(bit_builder.from_bit_string)
+  |> middleware.log
 }
 
 fn service(request) {
