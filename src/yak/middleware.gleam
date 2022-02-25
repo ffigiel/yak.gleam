@@ -5,6 +5,20 @@ import gleam/int
 import gleam/http/request.{Request}
 import gleam/http/response.{Response}
 import gleam/http/service.{Service}
+import gleam/base
+
+pub fn request_id(service: Service(a, b)) -> Service(a, b) {
+  fn(request) {
+    let request_id =
+      strong_rand_bytes(8)
+      |> base.url_encode64(False)
+    service(request)
+    |> response.prepend_header("x-request-id", request_id)
+  }
+}
+
+external fn strong_rand_bytes(n: Int) -> BitString =
+  "crypto" "strong_rand_bytes"
 
 pub fn log(service: Service(a, b)) -> Service(a, b) {
   fn(request) {
