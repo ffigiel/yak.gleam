@@ -7,80 +7,42 @@ import gleam/http/response.{Response}
 import gleam/http/service.{Service}
 import gleam/base
 import gleam/pgo
+import yak/app_request.{AppRequest}
+import yak/user
 
-pub type RequestContext {
-  RequestContext(
-    db: pgo.Connection,
-    body: BitString,
-    request_id: String,
-    user: User,
-  )
-}
-
-fn new_request_context(
-  request: Request(BitString),
-  db: pgo.Connection,
-) -> RequestContext {
-  RequestContext(
-    db: db,
-    body: request.body,
-    request_id: gen_request_id(),
-    user: Anonymous,
-  )
-}
-
-pub type User {
-  Anonymous
-}
-
-pub fn request_context(
-  service: Service(RequestContext, b),
+pub fn app_request(
+  service: AppService(b),
   db: pgo.Connection,
 ) -> Service(BitString, b) {
   fn(request: Request(BitString)) {
-    let req_ctx = new_request_context(request, db)
-    let request = request.map(request, fn(_) { req_ctx })
-    service(request)
+    let app_request = app_request.new(request, db)
+    service(app_request)
   }
 }
 
-fn gen_request_id() -> String {
-  strong_rand_bytes(8)
-  |> base.url_encode64(False)
-}
+type AppService(b) =
+  fn(AppRequest) -> Response(b)
 
-external fn strong_rand_bytes(n: Int) -> BitString =
-  "crypto" "strong_rand_bytes"
-
-pub fn log(service: Service(RequestContext, b)) -> Service(RequestContext, b) {
-  fn(request: Request(RequestContext)) {
+pub fn log(service: AppService(b)) -> AppService(b) {
+  fn(request: AppRequest) {
     let response = service(request)
     io.println(prepare_log_line(request, response))
     response
   }
 }
 
-fn prepare_log_line(
-  request: Request(RequestContext),
-  response: Response(b),
-) -> String {
+fn prepare_log_line(request: AppRequest, response: Response(b)) -> String {
   string.concat([
-    request.method
+    request.http.method
     |> http.method_to_string
     |> string.uppercase,
     " ",
     int.to_string(response.status),
     " ",
-    request.path,
+    request.http.path,
     " request_id=",
-    request.body.request_id,
+    request.request_id,
     " user=",
-    user_to_string(request.body.user),
+    user.to_string(request.user),
   ])
-}
-
-fn user_to_string(user: User) -> String {
-  case user {
-    Anonymous -> "anonymous"
-  }
 }
