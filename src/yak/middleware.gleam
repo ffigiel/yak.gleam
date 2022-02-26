@@ -7,28 +7,44 @@ import gleam/http/response.{Response}
 import gleam/http/service.{Service}
 import gleam/base
 
-pub fn request_id(service: Service(a, b)) -> Service(a, b) {
-  fn(request) {
-    let request_id =
-      strong_rand_bytes(8)
-      |> base.url_encode64(False)
+pub type RequestContext {
+  RequestContext(body: BitString, request_id: String)
+}
+
+fn new_request_context(request: Request(BitString)) -> RequestContext {
+  RequestContext(body: request.body, request_id: gen_request_id())
+}
+
+pub fn request_context(
+  service: Service(RequestContext, b),
+) -> Service(BitString, b) {
+  fn(request: Request(BitString)) {
+    let req_ctx = new_request_context(request)
+    let request = request.map(request, fn(_) { req_ctx })
     service(request)
-    |> response.prepend_header("x-request-id", request_id)
   }
+}
+
+fn gen_request_id() -> String {
+  strong_rand_bytes(8)
+  |> base.url_encode64(False)
 }
 
 external fn strong_rand_bytes(n: Int) -> BitString =
   "crypto" "strong_rand_bytes"
 
-pub fn log(service: Service(a, b)) -> Service(a, b) {
-  fn(request) {
+pub fn log(service: Service(RequestContext, b)) -> Service(RequestContext, b) {
+  fn(request: Request(RequestContext)) {
     let response = service(request)
     io.println(prepare_log_line(request, response))
     response
   }
 }
 
-fn prepare_log_line(request: Request(a), response: Response(b)) -> String {
+fn prepare_log_line(
+  request: Request(RequestContext),
+  response: Response(b),
+) -> String {
   string.concat([
     request.method
     |> http.method_to_string
@@ -37,5 +53,7 @@ fn prepare_log_line(request: Request(a), response: Response(b)) -> String {
     int.to_string(response.status),
     " ",
     request.path,
+    " request_id=",
+    request.body.request_id,
   ])
 }

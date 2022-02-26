@@ -7,10 +7,11 @@ import gleam/http/response
 import gleam/http.{Get}
 
 pub fn stack() {
+  // middlewares are executed from bottom to top
   service
   |> service.map_response_body(bit_builder.from_bit_string)
-  |> middleware.request_id
   |> middleware.log
+  |> middleware.request_context
 }
 
 fn service(request) {
