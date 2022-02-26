@@ -3,9 +3,12 @@ import gleam/bit_string
 import gleam/bit_builder
 import gleam/http/request
 import gleam/http/response
-import gleam/http.{Get}
+import gleam/http.{Post}
 import gleam/pgo
+import gleam/io
 import yak/app_request.{AppRequest}
+import yak/crypto
+import yak/db
 
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
@@ -17,14 +20,16 @@ pub fn stack(db: pgo.Connection) {
 fn service(request: AppRequest) {
   let path = request.path_segments(request.http)
   case request.http.method, path {
-    Get, [] -> hello(request)
+    Post, ["login"] -> login(request)
     _, _ -> not_found(request)
   }
 }
 
-fn hello(request) {
+fn login(request) {
+  let session_id = crypto.gen_session_id()
+  assert Ok(_) = db.create_session(request.db, 1, session_id)
   let body =
-    "Hello world"
+    "welcome"
     |> bit_string.from_string
     |> bit_builder.from_bit_string
   response.new(200)
