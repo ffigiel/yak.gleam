@@ -8,11 +8,19 @@ import gleam/http/service.{Service}
 import gleam/base
 
 pub type RequestContext {
-  RequestContext(body: BitString, request_id: String)
+  RequestContext(body: BitString, request_id: String, user: User)
 }
 
 fn new_request_context(request: Request(BitString)) -> RequestContext {
-  RequestContext(body: request.body, request_id: gen_request_id())
+  RequestContext(
+    body: request.body,
+    request_id: gen_request_id(),
+    user: Anonymous,
+  )
+}
+
+pub type User {
+  Anonymous
 }
 
 pub fn request_context(
@@ -55,5 +63,13 @@ fn prepare_log_line(
     request.path,
     " request_id=",
     request.body.request_id,
+    " user=",
+    user_to_string(request.body.user),
   ])
+}
+
+fn user_to_string(user: User) -> String {
+  case user {
+    Anonymous -> "anonymous"
+  }
 }
