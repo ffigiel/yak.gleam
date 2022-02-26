@@ -13,6 +13,7 @@ import yak/db
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
   service
+  |> middleware.rescue
   |> middleware.log
   |> middleware.app_request(db)
 }
