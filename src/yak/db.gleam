@@ -7,11 +7,11 @@ pub fn create_session(
 ) -> Result(pgo.Returned(Nil), pgo.QueryError) {
   let sql =
     "
-  insert into sessions
-    (user_pk, session_id)
-  values
-    ($1, $2);
-  "
+    insert into sessions
+      (user_pk, session_id)
+    values
+      ($1, $2)
+    "
   pgo.execute(
     sql,
     db,
