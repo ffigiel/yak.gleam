@@ -5,13 +5,14 @@ import gleam/http/service
 import gleam/http/request
 import gleam/http/response
 import gleam/http.{Get}
+import gleam/pgo
 
-pub fn stack() {
+pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
   service
   |> service.map_response_body(bit_builder.from_bit_string)
   |> middleware.log
-  |> middleware.request_context
+  |> middleware.request_context(db)
 }
 
 fn service(request) {

@@ -6,13 +6,23 @@ import gleam/http/request.{Request}
 import gleam/http/response.{Response}
 import gleam/http/service.{Service}
 import gleam/base
+import gleam/pgo
 
 pub type RequestContext {
-  RequestContext(body: BitString, request_id: String, user: User)
+  RequestContext(
+    db: pgo.Connection,
+    body: BitString,
+    request_id: String,
+    user: User,
+  )
 }
 
-fn new_request_context(request: Request(BitString)) -> RequestContext {
+fn new_request_context(
+  request: Request(BitString),
+  db: pgo.Connection,
+) -> RequestContext {
   RequestContext(
+    db: db,
     body: request.body,
     request_id: gen_request_id(),
     user: Anonymous,
@@ -25,9 +35,10 @@ pub type User {
 
 pub fn request_context(
   service: Service(RequestContext, b),
+  db: pgo.Connection,
 ) -> Service(BitString, b) {
   fn(request: Request(BitString)) {
-    let req_ctx = new_request_context(request)
+    let req_ctx = new_request_context(request, db)
     let request = request.map(request, fn(_) { req_ctx })
     service(request)
   }
