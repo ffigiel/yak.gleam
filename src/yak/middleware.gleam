@@ -26,6 +26,13 @@ pub fn app_request(
   }
 }
 
+pub fn request_id(service: AppService) -> AppService {
+  fn(request: AppRequest) {
+    service(request)
+    |> response.prepend_header("x-request-id", request.request_id)
+  }
+}
+
 pub fn log(service: AppService) -> AppService {
   fn(request: AppRequest) {
     let response = service(request)

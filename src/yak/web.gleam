@@ -15,6 +15,7 @@ pub fn stack(db: pgo.Connection) {
   service
   |> middleware.rescue
   |> middleware.log
+  |> middleware.request_id
   |> middleware.app_request(db)
 }
 
