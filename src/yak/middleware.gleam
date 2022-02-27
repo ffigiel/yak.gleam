@@ -4,7 +4,6 @@ import gleam/http
 import gleam/int
 import gleam/http/request.{Request}
 import gleam/http/response.{Response}
-import gleam/http/service.{Service}
 import gleam/base
 import gleam/pgo
 import yak/app_request.{AppRequest}
@@ -16,13 +15,12 @@ import gleam/bit_builder.{BitBuilder}
 type AppService =
   fn(AppRequest) -> Response(BitBuilder)
 
-pub fn app_request(
-  service: AppService,
-  db: pgo.Connection,
-) -> Service(BitString, BitBuilder) {
-  fn(request: Request(BitString)) {
-    let app_request = app_request.new(request, db)
-    service(app_request)
+pub fn app_request(db: pgo.Connection) {
+  fn(service) {
+    fn(request: Request(BitString)) {
+      let app_request = app_request.new(request, db)
+      service(app_request)
+    }
   }
 }
 

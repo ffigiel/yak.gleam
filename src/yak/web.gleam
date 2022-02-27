@@ -3,12 +3,13 @@ import gleam/bit_string
 import gleam/bit_builder
 import gleam/http/request
 import gleam/http/response
-import gleam/http.{Post}
+import gleam/http.{Get, Post}
 import gleam/pgo
 import gleam/io
 import yak/app_request.{AppRequest}
 import yak/crypto
 import yak/db
+import gleam/http/cors
 
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
@@ -17,6 +18,11 @@ pub fn stack(db: pgo.Connection) {
   |> middleware.log
   |> middleware.request_id
   |> middleware.app_request(db)
+  |> cors.middleware(
+    origins: ["http://localhost:3001"],
+    methods: [Get, Post],
+    headers: ["content-type"],
+  )
 }
 
 fn service(request: AppRequest) {
