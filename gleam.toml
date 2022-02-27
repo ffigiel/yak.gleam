@@ -16,6 +16,7 @@ gleam_elli = "~> 1.1"
 gleam_erlang = "~> 0.9"
 gleam_pgo = "~> 0.3"
 gleam_cors = "~> 0.1"
+gleam_crypto = "~> 0.3"
 
 [dev-dependencies]
 gleeunit = "~> 0.6"

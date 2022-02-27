@@ -1,15 +1,15 @@
-import yak/middleware
-import gleam/bit_string
 import gleam/bit_builder
+import gleam/bit_string
+import gleam/crypto
+import gleam/http.{Get, Post}
+import gleam/http/cors
 import gleam/http/request
 import gleam/http/response
-import gleam/http.{Get, Post}
-import gleam/pgo
 import gleam/io
+import gleam/pgo
 import yak/app_request.{AppRequest}
-import yak/crypto
 import yak/db
-import gleam/http/cors
+import yak/middleware
 
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
@@ -34,7 +34,7 @@ fn service(request: AppRequest) {
 }
 
 fn login(request) {
-  let session_id = crypto.gen_session_id()
+  let session_id = gen_session_id()
   assert Ok(_) = db.create_session(request.db, 1, session_id)
   let body =
     "welcome"
@@ -42,6 +42,10 @@ fn login(request) {
     |> bit_builder.from_bit_string
   response.new(200)
   |> response.set_body(body)
+}
+
+fn gen_session_id() -> BitString {
+  crypto.strong_random_bytes(32)
 }
 
 fn not_found(_request) {
