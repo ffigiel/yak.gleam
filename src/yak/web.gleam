@@ -33,9 +33,9 @@ fn service(request: AppRequest) {
   }
 }
 
-fn login(request) {
+fn login(request: AppRequest) {
   let session_id = gen_session_id()
-  assert Ok(_) = db.create_session(request.db, 1, session_id)
+  let assert Ok(_) = db.create_session(request.db, 1, session_id)
   let body =
     "welcome"
     |> bit_string.from_string

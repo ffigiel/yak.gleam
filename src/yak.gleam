@@ -4,14 +4,14 @@ import gleam/http/elli
 import gleam/string
 import gleam/pgo
 import yak/web
-import gleam/erlang
+import gleam/erlang/process
 
 pub fn main() {
   let db = get_db_connection()
   let port = 3000
-  assert Ok(_) = elli.start(web.stack(db), on_port: port)
+  let assert Ok(_) = elli.start(web.stack(db), on_port: port)
   io.println(string.concat(["Yak running on port ", int.to_string(port)]))
-  erlang.sleep_forever()
+  process.sleep_forever()
 }
 
 fn get_db_connection() -> pgo.Connection {
