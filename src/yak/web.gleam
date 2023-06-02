@@ -1,5 +1,6 @@
 import gleam/bit_builder
 import gleam/io
+import gleam/int
 import gleam/string
 import gleam/bit_string
 import gleam/result
@@ -13,6 +14,7 @@ import yak/app_request.{AppRequest}
 import yak/db
 import yak/shared
 import yak/middleware
+import gleam/base
 
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
@@ -54,6 +56,10 @@ fn login(request: AppRequest) {
             |> bit_string.from_string
             |> bit_builder.from_bit_string
           response.new(200)
+          |> response.prepend_header(
+            "set-cookie",
+            make_session_cookie(session_id),
+          )
           |> response.set_body(body)
         }
         Error(db.NotFound) -> {
@@ -87,6 +93,17 @@ fn login(request: AppRequest) {
 
 fn gen_session_id() -> BitString {
   crypto.strong_random_bytes(32)
+}
+
+fn make_session_cookie(session_id: BitString) -> String {
+  let parts = [
+    string.concat(["session_id=", base.url_encode64(session_id, False)]),
+    "Secure",
+    "HttpOnly",
+    // Expire the cookie in two weeks
+    string.concat(["Max-Age=", int.to_string(2 * 7 * 24 * 60 * 60)]),
+  ]
+  string.join(parts, "; ")
 }
 
 fn not_found(_request) {
