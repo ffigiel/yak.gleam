@@ -9,9 +9,20 @@ import gleam/erlang/process
 pub fn main() {
   let db = get_db_connection()
   let port = 3000
-  let assert Ok(_) = elli.start(web.stack(db), on_port: port)
-  io.println(string.concat(["Yak running on port ", int.to_string(port)]))
+  start_server(db, port)
+  io.println(string.concat(["✅ Yak running on port ", int.to_string(port)]))
   process.sleep_forever()
+}
+
+fn start_server(db: pgo.Connection, port: Int) -> Nil {
+  case elli.start(web.stack(db), on_port: port) {
+    Ok(_) -> Nil
+    Error(_) -> {
+      io.println("⚠️ Failed to start the server, retrying")
+      process.sleep(1000)
+      start_server(db, port)
+    }
+  }
 }
 
 fn get_db_connection() -> pgo.Connection {
