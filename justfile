@@ -13,3 +13,5 @@ db-up:
     docker-compose up -d
 db-reset:
     docker-compose exec -T -u postgres postgres psql < reset.sql
+db-shell:
+    docker-compose exec -u postgres postgres psql
