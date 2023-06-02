@@ -1,11 +1,13 @@
-import gleam/int
+import gleam/dynamic.{Dynamic}
+import gleam/fetch
+import gleam/http
+import gleam/http/request
+import gleam/json
 import lustre
-import lustre/element.{button, div, p, span, text}
-import lustre/event.{on_click}
+import lustre/attribute
 import lustre/cmd
-import gleam/map.{Map}
-import gleam/list
-import gleam/option
+import lustre/element
+import lustre/event
 
 pub fn main() {
   let app = lustre.application(#(init_state(), cmd.none()), update, render)
@@ -13,82 +15,95 @@ pub fn main() {
 }
 
 type State {
-  State(ctr: Int, counters: Map(Int, Int))
+  State(email: String, password: String)
 }
 
 fn init_state() {
-  State(ctr: 2, counters: map.from_list([#(1, 0)]))
+  State(email: "", password: "")
 }
 
 pub type Action {
-  Add
-  Remove(id: Int)
-  Increment(id: Int)
-  Decrement(id: Int)
+  GotEmail(value: String)
+  GotPassword(value: String)
+  SubmittedForm
+  Todo
 }
 
 fn update(state: State, action: Action) {
   case action {
-    Add -> #(
-      State(
-        ctr: state.ctr + 1,
-        counters: state.counters
-        |> map.insert(state.ctr, 0),
-      ),
-      cmd.none(),
+    GotEmail(value) -> #(State(..state, email: value), cmd.none())
+    GotPassword(value) -> #(State(..state, password: value), cmd.none())
+    SubmittedForm -> #(
+      state,
+      {
+        use dispatch <- cmd.from
+        let body =
+          json.object([
+            #("email", json.string(state.email)),
+            #("password", json.string(state.password)),
+          ])
+          |> json.to_string
+        let request =
+          request.new()
+          |> request.set_method(http.Post)
+          |> request.set_scheme(http.Http)
+          |> request.set_host("localhost:3000")
+          |> request.set_path("login")
+          |> request.set_body(body)
+        fetch.send(request)
+        dispatch(Todo)
+      },
     )
-    Remove(id) -> #(
-      State(
-        ..state,
-        counters: state.counters
-        |> map.delete(id),
-      ),
-      cmd.none(),
-    )
-    Increment(id) -> #(
-      State(
-        ..state,
-        counters: state.counters
-        |> map.update(id, fn(opt_ctr) { option.unwrap(opt_ctr, 0) + 1 }),
-      ),
-      cmd.none(),
-    )
-    Decrement(id) -> #(
-      State(
-        ..state,
-        counters: state.counters
-        |> map.update(id, fn(opt_ctr) { option.unwrap(opt_ctr, 0) - 1 }),
-      ),
-      cmd.none(),
-    )
+    Todo -> #(state, cmd.none())
   }
 }
 
 fn render(state: State) {
-  let render_counter = fn(pair) {
-    let #(id, value) = pair
-    p(
-      [],
-      [
-        button([on_click(Decrement(id))], [text("-")]),
-        span([], [text(" "), text(int.to_string(value)), text(" ")]),
-        button([on_click(Increment(id))], [text("+")]),
-        span([], [text(" ")]),
-        button([on_click(Remove(id))], [text("remove")]),
-      ],
-    )
-  }
-
-  div(
-    [],
+  element.form(
+    [handle_submit(SubmittedForm)],
     [
-      div(
+      element.p(
         [],
-        state.counters
-        |> map.to_list
-        |> list.map(render_counter),
+        [
+          element.label(
+            [],
+            [
+              element.span([], [element.text("Email")]),
+              element.input([
+                event.on_input(GotEmail),
+                attribute.value(dynamic.from(state.email)),
+                attribute.type_("email"),
+              ]),
+            ],
+          ),
+        ],
       ),
-      p([], [button([on_click(Add)], [text("add")])]),
+      element.p(
+        [],
+        [
+          element.label(
+            [],
+            [
+              element.span([], [element.text("Password")]),
+              element.input([
+                event.on_input(GotPassword),
+                attribute.value(dynamic.from(state.password)),
+                attribute.type_("password"),
+              ]),
+            ],
+          ),
+        ],
+      ),
+      element.p([], [element.button([], [element.text("Submit")])]),
     ],
   )
 }
+
+fn handle_submit(a) -> attribute.Attribute(a) {
+  use event, dispatch <- event.on("submit")
+  prevent_default_on_event(event)
+  dispatch(a)
+}
+
+external fn prevent_default_on_event(Dynamic) -> Nil =
+  "" "preventDefaultOnEvent"

@@ -2,7 +2,7 @@ run:
     just db-up
     npx concurrently "just run-ui-server" "just run-ui-build" "just run-backend"
 run-ui-server:
-    cd ui && vite
+    cd ui && vite --port 3001
 run-ui-build:
     cd ui && watchexec -w src gleam build --target javascript
 
