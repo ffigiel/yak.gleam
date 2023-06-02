@@ -11,6 +11,7 @@ import yak/user
 import gleam/erlang
 import gleam/bit_string
 import gleam/bit_builder.{BitBuilder}
+import gleam/option
 
 type AppService =
   fn(AppRequest) -> Response(BitBuilder)
@@ -51,7 +52,10 @@ fn prepare_log_line(request: AppRequest, response: Response(b)) -> String {
     " request_id=",
     request.request_id,
     " user=",
-    user.to_string(request.user),
+    case request.user {
+      option.None -> "anonymous"
+      option.Some(u) -> u.email
+    },
   ])
 }
 

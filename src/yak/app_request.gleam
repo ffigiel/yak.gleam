@@ -1,4 +1,5 @@
 import gleam/base
+import gleam/option.{Option}
 import gleam/crypto
 import gleam/http/request.{Request}
 import gleam/pgo
@@ -8,7 +9,7 @@ pub type AppRequest {
   AppRequest(
     db: pgo.Connection,
     request_id: String,
-    user: User,
+    user: Option(User),
     http: Request(BitString),
   )
 }
@@ -17,7 +18,7 @@ pub fn new(request: Request(BitString), db: pgo.Connection) -> AppRequest {
   AppRequest(
     db: db,
     request_id: gen_request_id(),
-    user: user.Anonymous,
+    user: option.None,
     http: request,
   )
 }

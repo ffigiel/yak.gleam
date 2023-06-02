@@ -1,9 +1,3 @@
 pub type User {
-  Anonymous
-}
-
-pub fn to_string(user: User) -> String {
-  case user {
-    Anonymous -> "anonymous"
-  }
+  User(pk: Int, email: String, password_hash: BitString)
 }
