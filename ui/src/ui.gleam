@@ -2,12 +2,12 @@ import gleam/dynamic.{Dynamic}
 import gleam/fetch
 import gleam/http
 import gleam/http/request
-import gleam/json
 import lustre
 import lustre/attribute
 import lustre/cmd
 import lustre/element
 import lustre/event
+import yak/shared
 
 pub fn main() {
   let app = lustre.application(#(init_state(), cmd.none()), update, render)
@@ -38,11 +38,8 @@ fn update(state: State, action: Action) {
       {
         use dispatch <- cmd.from
         let body =
-          json.object([
-            #("email", json.string(state.email)),
-            #("password", json.string(state.password)),
-          ])
-          |> json.to_string
+          shared.LoginRequest(email: state.email, password: state.password)
+          |> shared.login_request_to_json
         let request =
           request.new()
           |> request.set_method(http.Post)

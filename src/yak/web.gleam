@@ -12,6 +12,7 @@ import gleam/json
 import gleam/pgo
 import yak/app_request.{AppRequest}
 import yak/db
+import yak/shared
 import yak/middleware
 
 pub fn stack(db: pgo.Connection) {
@@ -36,15 +37,11 @@ fn service(request: AppRequest) {
   }
 }
 
-pub type LoginRequest {
-  LoginRequest(email: String, password: String)
-}
-
 fn login(request: AppRequest) {
   let session_id = gen_session_id()
   let assert Ok(_) = db.create_session(request.db, 1, session_id)
   case
-    login_request_from_json(
+    shared.login_request_from_json(
       request.http.body
       |> bit_string.to_string
       |> result.unwrap(""),
@@ -67,18 +64,6 @@ fn login(request: AppRequest) {
       |> response.set_body(body)
     }
   }
-}
-
-pub fn login_request_from_json(
-  string: String,
-) -> Result(LoginRequest, json.DecodeError) {
-  let decoder =
-    dynamic.decode2(
-      LoginRequest,
-      dynamic.field("email", dynamic.string),
-      dynamic.field("password", dynamic.string),
-    )
-  json.decode(from: string, using: decoder)
 }
 
 fn gen_session_id() -> BitString {
