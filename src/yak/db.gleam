@@ -42,6 +42,42 @@ pub fn get_user_by_email(
   }
 }
 
+pub fn get_user_by_session_id(
+  db: pgo.Connection,
+  session_id: BitString,
+) -> Result(User, DbError) {
+  let sql =
+    "
+    select
+      u.pk, u.email, u.password_hash
+    from users u
+    join sessions s on
+      u.pk = s.user_pk
+    where
+      session_id = $1
+    "
+  let result =
+    pgo.execute(
+      sql,
+      db,
+      [pgo.bytea(session_id)],
+      dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
+    )
+  case result {
+    Ok(returned) -> {
+      case returned.rows {
+        [] -> Error(NotFound)
+        [_, _, ..] -> Error(MultipleRowsReturned(returned.count))
+        [data] -> {
+          let user = User(pk: data.0, email: data.1, password_hash: data.2)
+          Ok(user)
+        }
+      }
+    }
+    Error(err) -> Error(QueryError(err))
+  }
+}
+
 pub fn create_session(
   db: pgo.Connection,
   user_pk: Int,
