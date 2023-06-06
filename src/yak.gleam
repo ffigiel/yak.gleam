@@ -3,13 +3,13 @@ import gleam/int
 import gleam/http/elli
 import gleam/string
 import gleam/pgo
-import yak/web
+import yak/api
 import gleam/erlang/process
 
 pub fn main() {
   let db = get_db_connection()
   let port = 3000
-  let stack = web.stack(db)
+  let stack = api.stack(db)
   start_server(stack, port)
   io.println(string.concat(["✅ Yak running on port ", int.to_string(port)]))
   process.sleep_forever()

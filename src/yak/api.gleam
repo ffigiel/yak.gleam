@@ -1,20 +1,20 @@
-import gleam/bit_builder.{BitBuilder}
-import gleam/io
-import gleam/int
-import gleam/string
+import gleam/base
 import gleam/bit_string
-import gleam/result
 import gleam/http.{Get, Post}
 import gleam/http/cors
 import gleam/http/request
-import gleam/http/response.{Response}
+import gleam/http/response
+import gleam/int
+import gleam/io
 import gleam/pgo
-import yak/app_request.{AppRequest}
+import gleam/result
+import gleam/string
+import yak/api/app_request.{AppRequest}
+import yak/api/middleware
+import yak/api/utils
+import yak/core
 import yak/db
 import yak/shared
-import yak/middleware
-import yak/core
-import gleam/base
 
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
@@ -45,26 +45,26 @@ fn login(request: AppRequest) {
   |> shared.login_request_from_json
   |> result.map_error(fn(error) {
     // TODO nicer message for parsing erorrs
-    string_response(400, string.inspect(error))
+    utils.string_response(400, string.inspect(error))
   })
   |> result.map(fn(req) {
     case core.login(request.db, req) {
       Ok(#(user, session_id)) -> {
-        string_response(200, string.concat(["welcome, ", user.email]))
+        utils.string_response(200, string.concat(["welcome, ", user.email]))
         |> response.prepend_header(
           "set-cookie",
           make_session_cookie(session_id),
         )
       }
       Error(core.LoginUserLookupError(db.NotFound)) -> {
-        string_response(400, "User not found")
+        utils.string_response(400, "User not found")
       }
       Error(error) -> {
         io.println(string.concat([
           "Internal Server Error: ",
           string.inspect(error),
         ]))
-        string_response(500, "Internal Server Error")
+        utils.internal_server_error()
       }
     }
   })
@@ -83,14 +83,5 @@ fn make_session_cookie(session_id: BitString) -> String {
 }
 
 fn not_found(_request) {
-  string_response(404, "Not Found")
-}
-
-fn string_response(status_code: Int, body: String) -> Response(BitBuilder) {
-  response.new(status_code)
-  |> response.set_body(
-    body
-    |> bit_string.from_string
-    |> bit_builder.from_bit_string,
-  )
+  utils.not_found()
 }

@@ -1,15 +1,16 @@
-import gleam/io
-import gleam/string
+import gleam/bit_builder.{BitBuilder}
+import gleam/bit_string
+import gleam/erlang
 import gleam/http
-import gleam/int
 import gleam/http/request.{Request}
 import gleam/http/response.{Response}
-import gleam/pgo
-import yak/app_request.{AppRequest}
-import gleam/erlang
-import gleam/bit_string
-import gleam/bit_builder.{BitBuilder}
+import gleam/int
+import gleam/io
 import gleam/option
+import gleam/pgo
+import gleam/string
+import yak/api/app_request.{AppRequest}
+import yak/api/utils
 
 type AppService =
   fn(AppRequest) -> Response(BitBuilder)
@@ -67,12 +68,7 @@ pub fn rescue(service: AppService) -> AppService {
           "Unhandled Exception: ",
           string.inspect(crash),
         ]))
-        let body =
-          "Internal Server Error"
-          |> bit_string.from_string
-          |> bit_builder.from_bit_string
-        response.new(500)
-        |> response.set_body(body)
+        utils.internal_server_error()
       }
     }
   }
