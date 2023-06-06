@@ -45,14 +45,9 @@ fn login(request: AppRequest) {
   |> shared.login_request_from_json
   |> result.map_error(fn(error) {
     // TODO nicer message for parsing erorrs
-    let body =
-      string.inspect(error)
-      |> bit_string.from_string
-      |> bit_builder.from_bit_string
-    response.new(400)
-    |> response.set_body(body)
+    string_response(400, string.inspect(error))
   })
-  |> result.then(fn(req) {
+  |> result.map(fn(req) {
     case core.login(request, req) {
       Ok(#(user, session_id)) -> {
         string_response(200, string.concat(["welcome, ", user.email]))
@@ -60,11 +55,9 @@ fn login(request: AppRequest) {
           "set-cookie",
           make_session_cookie(session_id),
         )
-        |> Ok
       }
       Error(core.LoginUserLookupError(db.NotFound)) -> {
         string_response(400, "User not found")
-        |> Error
       }
       Error(error) -> {
         io.println(string.concat([
@@ -72,7 +65,6 @@ fn login(request: AppRequest) {
           string.inspect(error),
         ]))
         string_response(500, "Internal Server Error")
-        |> Error
       }
     }
   })

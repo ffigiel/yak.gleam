@@ -4,10 +4,8 @@ import gleam/http
 import gleam/int
 import gleam/http/request.{Request}
 import gleam/http/response.{Response}
-import gleam/base
 import gleam/pgo
 import yak/app_request.{AppRequest}
-import yak/user
 import gleam/erlang
 import gleam/bit_string
 import gleam/bit_builder.{BitBuilder}
