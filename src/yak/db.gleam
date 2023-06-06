@@ -1,11 +1,28 @@
 import gleam/pgo
-import gleam/dynamic
+import gleam/result
+import gleam/string
+import gleam/dynamic.{Dynamic}
 import yak/user.{User}
 
 pub type DbError {
   NotFound
-  MultipleRowsReturned(Int)
+  MultipleRowsReturned
   QueryError(pgo.QueryError)
+}
+
+fn get_one(
+  sql: String,
+  pool: pgo.Connection,
+  arguments: List(pgo.Value),
+  decoder: fn(Dynamic) -> Result(a, List(dynamic.DecodeError)),
+) -> Result(a, DbError) {
+  let sql = string.concat([sql, " limit 2"])
+  case pgo.execute(sql, pool, arguments, decoder) {
+    Ok(pgo.Returned(rows: [data], ..)) -> Ok(data)
+    Ok(pgo.Returned(rows: [], ..)) -> Error(NotFound)
+    Ok(pgo.Returned(rows: [_, _, ..], ..)) -> Error(MultipleRowsReturned)
+    Error(error) -> Error(QueryError(error))
+  }
 }
 
 pub fn get_user_by_email(
@@ -20,26 +37,15 @@ pub fn get_user_by_email(
     where
       email = $1
     "
-  let result =
-    pgo.execute(
-      sql,
-      db,
-      [pgo.text(email)],
-      dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
-    )
-  case result {
-    Ok(returned) -> {
-      case returned.rows {
-        [] -> Error(NotFound)
-        [_, _, ..] -> Error(MultipleRowsReturned(returned.count))
-        [data] -> {
-          let user = User(pk: data.0, email: data.1, password_hash: data.2)
-          Ok(user)
-        }
-      }
-    }
-    Error(err) -> Error(QueryError(err))
-  }
+  get_one(
+    sql,
+    db,
+    [pgo.text(email)],
+    dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
+  )
+  |> result.map(fn(data) {
+    User(pk: data.0, email: data.1, password_hash: data.2)
+  })
 }
 
 pub fn get_user_by_session_id(
@@ -56,26 +62,15 @@ pub fn get_user_by_session_id(
     where
       session_id = $1
     "
-  let result =
-    pgo.execute(
-      sql,
-      db,
-      [pgo.bytea(session_id)],
-      dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
-    )
-  case result {
-    Ok(returned) -> {
-      case returned.rows {
-        [] -> Error(NotFound)
-        [_, _, ..] -> Error(MultipleRowsReturned(returned.count))
-        [data] -> {
-          let user = User(pk: data.0, email: data.1, password_hash: data.2)
-          Ok(user)
-        }
-      }
-    }
-    Error(err) -> Error(QueryError(err))
-  }
+  get_one(
+    sql,
+    db,
+    [pgo.bytea(session_id)],
+    dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
+  )
+  |> result.map(fn(data) {
+    User(pk: data.0, email: data.1, password_hash: data.2)
+  })
 }
 
 pub fn create_session(
