@@ -63,7 +63,10 @@ pub fn rescue(service: AppService) -> AppService {
     case result {
       Ok(response) -> response
       Error(crash) -> {
-        io.debug(crash)
+        io.println(string.concat([
+          "Unhandled Exception: ",
+          string.inspect(crash),
+        ]))
         let body =
           "Internal Server Error"
           |> bit_string.from_string
