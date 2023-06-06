@@ -1,19 +1,19 @@
-import gleam/bit_builder
+import gleam/bit_builder.{BitBuilder}
 import gleam/io
 import gleam/int
 import gleam/string
 import gleam/bit_string
 import gleam/result
-import gleam/crypto
 import gleam/http.{Get, Post}
 import gleam/http/cors
 import gleam/http/request
-import gleam/http/response
+import gleam/http/response.{Response}
 import gleam/pgo
 import yak/app_request.{AppRequest}
 import yak/db
 import yak/shared
 import yak/middleware
+import yak/core
 import gleam/base
 
 pub fn stack(db: pgo.Connection) {
@@ -39,60 +39,44 @@ fn service(request: AppRequest) {
 }
 
 fn login(request: AppRequest) {
-  let parsed_request =
-    request.http.body
-    |> bit_string.to_string
-    |> result.unwrap("")
-    |> shared.login_request_from_json
-  // TODO avoid nesting by refactoring this to `use` syntax
-  case parsed_request {
-    Ok(req) -> {
-      case db.get_user_by_email(request.db, req.email) {
-        Ok(user) -> {
-          let session_id = gen_session_id()
-          let assert Ok(_) = db.create_session(request.db, user.pk, session_id)
-          let body =
-            string.concat(["welcome, ", user.email])
-            |> bit_string.from_string
-            |> bit_builder.from_bit_string
-          response.new(200)
-          |> response.prepend_header(
-            "set-cookie",
-            make_session_cookie(session_id),
-          )
-          |> response.set_body(body)
-        }
-        Error(db.NotFound) -> {
-          let body =
-            "User not found"
-            |> bit_string.from_string
-            |> bit_builder.from_bit_string
-          response.new(400)
-          |> response.set_body(body)
-        }
-        Error(error) -> {
-          io.println(string.concat([
-            "Internal Server Error: ",
-            string.inspect(error),
-          ]))
-          panic
-        }
+  request.http.body
+  |> bit_string.to_string
+  |> result.unwrap("")
+  |> shared.login_request_from_json
+  |> result.map_error(fn(error) {
+    // TODO nicer message for parsing erorrs
+    let body =
+      string.inspect(error)
+      |> bit_string.from_string
+      |> bit_builder.from_bit_string
+    response.new(400)
+    |> response.set_body(body)
+  })
+  |> result.then(fn(req) {
+    case core.login(request, req) {
+      Ok(#(user, session_id)) -> {
+        string_response(200, string.concat(["welcome, ", user.email]))
+        |> response.prepend_header(
+          "set-cookie",
+          make_session_cookie(session_id),
+        )
+        |> Ok
+      }
+      Error(core.LoginUserLookupError(db.NotFound)) -> {
+        string_response(400, "User not found")
+        |> Error
+      }
+      Error(error) -> {
+        io.println(string.concat([
+          "Internal Server Error: ",
+          string.inspect(error),
+        ]))
+        string_response(500, "Internal Server Error")
+        |> Error
       }
     }
-    Error(error) -> {
-      // TODO nicer error message
-      let body =
-        string.inspect(error)
-        |> bit_string.from_string
-        |> bit_builder.from_bit_string
-      response.new(400)
-      |> response.set_body(body)
-    }
-  }
-}
-
-fn gen_session_id() -> BitString {
-  crypto.strong_random_bytes(32)
+  })
+  |> result.unwrap_both
 }
 
 fn make_session_cookie(session_id: BitString) -> String {
@@ -107,10 +91,14 @@ fn make_session_cookie(session_id: BitString) -> String {
 }
 
 fn not_found(_request) {
-  let body =
-    "Not Found"
+  string_response(404, "Not Found")
+}
+
+fn string_response(status_code: Int, body: String) -> Response(BitBuilder) {
+  response.new(status_code)
+  |> response.set_body(
+    body
     |> bit_string.from_string
-    |> bit_builder.from_bit_string
-  response.new(404)
-  |> response.set_body(body)
+    |> bit_builder.from_bit_string,
+  )
 }
