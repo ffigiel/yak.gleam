@@ -50,7 +50,7 @@ fn login(request: AppRequest) {
       case db.get_user_by_email(request.db, req.email) {
         Ok(user) -> {
           let session_id = gen_session_id()
-          let assert Ok(_) = db.create_session(request.db, 1, session_id)
+          let assert Ok(_) = db.create_session(request.db, user.pk, session_id)
           let body =
             string.concat(["welcome, ", user.email])
             |> bit_string.from_string
