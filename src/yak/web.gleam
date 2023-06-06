@@ -48,7 +48,7 @@ fn login(request: AppRequest) {
     string_response(400, string.inspect(error))
   })
   |> result.map(fn(req) {
-    case core.login(request, req) {
+    case core.login(request.db, req) {
       Ok(#(user, session_id)) -> {
         string_response(200, string.concat(["welcome, ", user.email]))
         |> response.prepend_header(

@@ -1,9 +1,9 @@
-import gleam/result
-import yak/user
 import gleam/crypto
-import yak/app_request.{AppRequest}
+import gleam/pgo
+import gleam/result
 import yak/db
 import yak/shared
+import yak/user
 
 pub type LoginError {
   LoginUserLookupError(db.DbError)
@@ -11,14 +11,14 @@ pub type LoginError {
 }
 
 pub fn login(
-  request: AppRequest,
+  db: pgo.Connection,
   req: shared.LoginRequest,
 ) -> Result(#(user.User, BitString), LoginError) {
-  db.get_user_by_email(request.db, req.email)
+  db.get_user_by_email(db, req.email)
   |> result.map_error(LoginUserLookupError)
   |> result.then(fn(user) {
     let session_id = gen_session_id()
-    db.create_session(request.db, user.pk, session_id)
+    db.create_session(db, user.pk, session_id)
     |> result.map_error(LoginCreateSessionError)
     |> result.map(fn(_) { #(user, session_id) })
   })
