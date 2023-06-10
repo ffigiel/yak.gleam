@@ -72,6 +72,7 @@ fn login(request: AppRequest) {
 }
 
 fn make_session_cookie(session_id: BitString) -> String {
+  // TODO use gleam/http/cookie.set_header instead
   let parts = [
     string.concat(["session_id=", base.url_encode64(session_id, False)]),
     "Secure",
