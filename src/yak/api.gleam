@@ -4,6 +4,7 @@ import gleam/http.{Get, Post}
 import gleam/http/cors
 import gleam/http/request
 import gleam/http/response
+import gleam/option
 import gleam/int
 import gleam/io
 import gleam/pgo
@@ -34,6 +35,7 @@ fn service(request: AppRequest) {
   let path = request.path_segments(request.http)
   case request.http.method, path {
     Post, ["login"] -> login(request)
+    Post, ["logout"] -> logout(request)
     _, _ -> not_found(request)
   }
 }
@@ -85,4 +87,27 @@ fn make_session_cookie(session_id: BitString) -> String {
 
 fn not_found(_request) {
   utils.not_found()
+}
+
+fn logout(request: AppRequest) {
+  request.auth_info
+  |> option.to_result(utils.string_response(400, "You are not logged in."))
+  |> result.map(fn(auth_info) {
+    case core.logout(request.db, auth_info.session_id) {
+      Ok(_) -> {
+        utils.string_response(200, "")
+      }
+      Error(core.LogoutSessionNotFoundError) -> {
+        utils.string_response(400, "You are not logged in.")
+      }
+      Error(error) -> {
+        io.println(string.concat([
+          "Internal Server Error: ",
+          string.inspect(error),
+        ]))
+        utils.internal_server_error()
+      }
+    }
+  })
+  |> result.unwrap_both
 }

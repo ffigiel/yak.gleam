@@ -25,6 +25,8 @@ fn get_one(
   }
 }
 
+// Users
+
 pub fn get_user_by_email(
   db: pgo.Connection,
   email: String,
@@ -73,6 +75,8 @@ pub fn get_user_by_session_id(
   })
 }
 
+// Sessions
+
 pub fn create_session(
   db: pgo.Connection,
   user_pk: Int,
@@ -85,15 +89,43 @@ pub fn create_session(
     values
       ($1, $2)
     "
-  let result =
-    pgo.execute(
-      sql,
-      db,
-      [pgo.int(user_pk), pgo.bytea(session_id)],
-      dynamic.dynamic,
-    )
-  case result {
-    Ok(_) -> Ok(Nil)
-    Error(err) -> Error(QueryError(err))
-  }
+  pgo.execute(
+    sql,
+    db,
+    [pgo.int(user_pk), pgo.bytea(session_id)],
+    dynamic.dynamic,
+  )
+  |> result.replace(Nil)
+  |> result.map_error(QueryError)
+}
+
+pub fn check_session_exists(
+  db: pgo.Connection,
+  session_id: BitString,
+) -> Result(Nil, DbError) {
+  let sql =
+    "
+    select 1
+    from sessions
+    where
+      session_id = $1
+    "
+  get_one(sql, db, [pgo.bytea(session_id)], dynamic.dynamic)
+  |> result.replace(Nil)
+}
+
+pub fn delete_session(
+  db: pgo.Connection,
+  session_id: BitString,
+) -> Result(Nil, DbError) {
+  let sql =
+    "
+    delete
+    from sessions
+    where
+      session_id = $1
+    "
+  pgo.execute(sql, db, [pgo.bytea(session_id)], dynamic.dynamic)
+  |> result.replace(Nil)
+  |> result.map_error(QueryError)
 }

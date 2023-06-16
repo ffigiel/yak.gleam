@@ -20,7 +20,7 @@ pub type AppRequest {
   )
 }
 
-pub opaque type AuthInfo {
+pub type AuthInfo {
   AuthInfo(user: User, session_id: BitString)
 }
 

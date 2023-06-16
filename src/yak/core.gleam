@@ -27,3 +27,26 @@ pub fn login(
 fn gen_session_id() -> BitString {
   crypto.strong_random_bytes(32)
 }
+
+pub type LogoutError {
+  LogoutSessionNotFoundError
+  LogoutSessionLookupError(db.DbError)
+  LogoutDeleteSessionError(db.DbError)
+}
+
+pub fn logout(
+  db: pgo.Connection,
+  session_id: BitString,
+) -> Result(Nil, LogoutError) {
+  db.check_session_exists(db, session_id)
+  |> result.map_error(fn(err) {
+    case err {
+      db.NotFound -> LogoutSessionNotFoundError
+      err -> LogoutDeleteSessionError(err)
+    }
+  })
+  |> result.then(fn(_) {
+    db.delete_session(db, session_id)
+    |> result.map_error(LogoutDeleteSessionError)
+  })
+}
