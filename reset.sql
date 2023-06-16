@@ -1,6 +1,3 @@
-drop table if exists sessions;
-drop table if exists users;
-
 create table users
     ( pk bigserial primary key
     , created_on timestamp with time zone not null default now()
