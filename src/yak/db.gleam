@@ -37,7 +37,7 @@ pub fn get_user_by_email(
       pk, email, password_hash
     from users
     where
-      email = $1
+      lower(email) = lower($1)
     "
   get_one(
     sql,
