@@ -1,5 +1,4 @@
 import gleam/bit_builder.{BitBuilder}
-import gleam/bit_string
 import gleam/erlang
 import gleam/http
 import gleam/http/request.{Request}
@@ -51,7 +50,7 @@ fn prepare_log_line(request: AppRequest, response: Response(b)) -> String {
     " request_id=",
     request.request_id,
     " user=",
-    case request.user {
+    case app_request.get_user(request.auth_info) {
       option.None -> "anonymous"
       option.Some(u) -> u.email
     },
