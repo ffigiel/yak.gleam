@@ -52,7 +52,9 @@ fn login(request: AppRequest) {
   |> result.map(fn(req) {
     case core.login(request.db, req) {
       Ok(#(user, session_id)) -> {
-        utils.string_response(200, string.concat(["welcome, ", user.email]))
+        shared.LoginResponse(email: user.email)
+        |> shared.login_response_to_json
+        |> utils.string_response(200, _)
         |> response.prepend_header(
           "set-cookie",
           make_session_cookie(session_id),
