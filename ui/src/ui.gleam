@@ -4,22 +4,23 @@ import gleam/http
 import gleam/http/request
 import lustre
 import lustre/attribute
-import lustre/cmd
+import lustre/effect
 import lustre/element
+import lustre/element/html
 import lustre/event
 import yak/shared
 
 pub fn main() {
-  let app = lustre.application(#(init_state(), cmd.none()), update, render)
-  lustre.start(app, "#app")
+  let app = lustre.application(init_state, update, view)
+  lustre.start(app, "[data-lustre-app]", Nil)
 }
 
 type State {
   State(email: String, password: String)
 }
 
-fn init_state() {
-  State(email: "", password: "")
+fn init_state(_flags) {
+  #(State(email: "", password: ""), effect.none())
 }
 
 pub type Action {
@@ -31,12 +32,12 @@ pub type Action {
 
 fn update(state: State, action: Action) {
   case action {
-    GotEmail(value) -> #(State(..state, email: value), cmd.none())
-    GotPassword(value) -> #(State(..state, password: value), cmd.none())
+    GotEmail(value) -> #(State(..state, email: value), effect.none())
+    GotPassword(value) -> #(State(..state, password: value), effect.none())
     SubmittedForm -> #(
       state,
       {
-        use dispatch <- cmd.from
+        use dispatch <- effect.from
         let body =
           shared.LoginRequest(email: state.email, password: state.password)
           |> shared.login_request_to_json
@@ -51,22 +52,22 @@ fn update(state: State, action: Action) {
         dispatch(Todo)
       },
     )
-    Todo -> #(state, cmd.none())
+    Todo -> #(state, effect.none())
   }
 }
 
-fn render(state: State) {
-  element.form(
+fn view(state: State) {
+  html.form(
     [handle_submit(SubmittedForm)],
     [
-      element.p(
+      html.p(
         [],
         [
-          element.label(
+          html.label(
             [],
             [
-              element.span([], [element.text("Email")]),
-              element.input([
+              html.span([], [element.text("Email")]),
+              html.input([
                 event.on_input(GotEmail),
                 attribute.value(dynamic.from(state.email)),
                 attribute.type_("email"),
@@ -75,14 +76,14 @@ fn render(state: State) {
           ),
         ],
       ),
-      element.p(
+      html.p(
         [],
         [
-          element.label(
+          html.label(
             [],
             [
-              element.span([], [element.text("Password")]),
-              element.input([
+              html.span([], [element.text("Password")]),
+              html.input([
                 event.on_input(GotPassword),
                 attribute.value(dynamic.from(state.password)),
                 attribute.type_("password"),
@@ -91,16 +92,20 @@ fn render(state: State) {
           ),
         ],
       ),
-      element.p([], [element.button([], [element.text("Submit")])]),
+      html.p([], [html.button([], [element.text("Submit")])]),
     ],
   )
 }
 
-fn handle_submit(a) -> attribute.Attribute(a) {
-  use event, dispatch <- event.on("submit")
-  prevent_default_on_event(event)
-  dispatch(a)
+fn handle_submit(msg) -> attribute.Attribute(a) {
+  event.on(
+    "submit",
+    fn(event) {
+      prevent_default_on_event(event)
+      Ok(msg)
+    },
+  )
 }
 
-external fn prevent_default_on_event(Dynamic) -> Nil =
-  "" "preventDefaultOnEvent"
+@external(javascript, "/ffi.mjs", "preventDefaultOnEvent")
+fn prevent_default_on_event(a: Dynamic) -> Nil
