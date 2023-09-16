@@ -1,9 +1,9 @@
 import gleam/crypto
 import gleam/pgo
 import gleam/result
-import yak/db
-import yak/shared
-import yak/user
+import yak_backend/db
+import yak_common
+import yak_backend/user
 
 pub type LoginError {
   LoginUserLookupError(db.DbError)
@@ -12,7 +12,7 @@ pub type LoginError {
 
 pub fn login(
   db: pgo.Connection,
-  req: shared.LoginRequest,
+  req: yak_common.LoginRequest,
 ) -> Result(#(user.User, BitString), LoginError) {
   db.get_user_by_email(db, req.email)
   |> result.map_error(LoginUserLookupError)

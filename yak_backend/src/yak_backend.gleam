@@ -3,7 +3,7 @@ import gleam/int
 import gleam/http/elli
 import gleam/string
 import gleam/pgo
-import yak/api
+import yak_backend/api
 import gleam/erlang/process
 
 pub fn main() {

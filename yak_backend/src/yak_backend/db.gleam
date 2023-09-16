@@ -2,7 +2,7 @@ import gleam/pgo
 import gleam/result
 import gleam/string
 import gleam/dynamic.{Dynamic}
-import yak/user.{User}
+import yak_backend/user.{User}
 
 pub type DbError {
   NotFound

@@ -8,8 +8,8 @@ import gleam/io
 import gleam/option
 import gleam/pgo
 import gleam/string
-import yak/api/app_request.{AppRequest}
-import yak/api/utils
+import yak_backend/api/app_request.{AppRequest}
+import yak_backend/api/utils
 
 type AppService =
   fn(AppRequest) -> Response(BitBuilder)

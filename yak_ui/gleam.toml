@@ -1,4 +1,4 @@
-name = "ui"
+name = "yak_ui"
 version = "0.1.0"
 description = "A Gleam project"
 
@@ -15,6 +15,7 @@ lustre = "~> 3.0"
 gleam_fetch = "~> 0.2"
 gleam_http = "~> 3.5"
 gleam_json = "~> 0.6"
+yak_common = { path = '../yak_common' }
 
 [dev-dependencies]
 gleeunit = "~> 0.11"

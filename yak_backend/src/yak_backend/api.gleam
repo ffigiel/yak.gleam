@@ -10,12 +10,12 @@ import gleam/io
 import gleam/pgo
 import gleam/result
 import gleam/string
-import yak/api/app_request.{AppRequest}
-import yak/api/middleware
-import yak/api/utils
-import yak/core
-import yak/db
-import yak/shared
+import yak_backend/api/app_request.{AppRequest}
+import yak_backend/api/middleware
+import yak_backend/api/utils
+import yak_backend/core
+import yak_backend/db
+import yak_common
 
 pub fn stack(db: pgo.Connection) {
   // middlewares are executed from bottom to top
@@ -44,7 +44,7 @@ fn login(request: AppRequest) {
   request.http.body
   |> bit_string.to_string
   |> result.unwrap("")
-  |> shared.login_request_from_json
+  |> yak_common.login_request_from_json
   |> result.map_error(fn(error) {
     // TODO nicer message for parsing erorrs
     utils.string_response(400, string.inspect(error))
@@ -52,8 +52,8 @@ fn login(request: AppRequest) {
   |> result.map(fn(req) {
     case core.login(request.db, req) {
       Ok(#(user, session_id)) -> {
-        shared.LoginResponse(email: user.email)
-        |> shared.login_response_to_json
+        yak_common.LoginResponse(email: user.email)
+        |> yak_common.login_response_to_json
         |> utils.string_response(200, _)
         |> response.prepend_header(
           "set-cookie",

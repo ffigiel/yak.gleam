@@ -8,8 +8,8 @@ import gleam/option.{Option}
 import gleam/crypto
 import gleam/http/request.{Request}
 import gleam/pgo
-import yak/user.{User}
-import yak/db
+import yak_backend/user.{User}
+import yak_backend/db
 
 pub type AppRequest {
   AppRequest(

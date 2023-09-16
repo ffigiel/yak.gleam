@@ -1,6 +1,6 @@
 import gleam/pgo
-import yak/user.{User}
-import yak/db
+import yak_backend/user.{User}
+import yak_backend/db
 import gleeunit/should
 
 fn get_test_db() -> pgo.Connection {

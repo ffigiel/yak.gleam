@@ -8,7 +8,7 @@ import lustre/effect
 import lustre/element
 import lustre/element/html
 import lustre/event
-import yak/shared
+import yak_common
 
 pub fn main() {
   let app = lustre.application(init_state, update, view)
@@ -39,8 +39,8 @@ fn update(state: State, action: Action) {
       {
         use dispatch <- effect.from
         let body =
-          shared.LoginRequest(email: state.email, password: state.password)
-          |> shared.login_request_to_json
+          yak_common.LoginRequest(email: state.email, password: state.password)
+          |> yak_common.login_request_to_json
         let request =
           request.new()
           |> request.set_method(http.Post)
