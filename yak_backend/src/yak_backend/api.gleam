@@ -25,7 +25,7 @@ pub fn stack(db: pgo.Connection) {
   |> middleware.request_id
   |> middleware.app_request(db)
   |> cors.middleware(
-    origins: ["http://localhost:3001"],
+    origins: ["https://yak.localhost:3000"],
     methods: [Get, Post],
     headers: ["content-type"],
   )

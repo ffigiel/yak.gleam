@@ -44,8 +44,8 @@ fn update(state: State, action: Action) {
         let request =
           request.new()
           |> request.set_method(http.Post)
-          |> request.set_scheme(http.Http)
-          |> request.set_host("localhost:3000")
+          |> request.set_scheme(http.Https)
+          |> request.set_host("api.yak.localhost:3000")
           |> request.set_path("login")
           |> request.set_body(body)
         fetch.send(request)

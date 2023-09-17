@@ -1,5 +1,5 @@
 run: db-up
-    npx concurrently "just run-ui-server" "just run-ui-build" "just run-backend"
+    npx concurrently "just run-ui-server" "just run-ui-build" "just run-backend" "caddy run"
 run-ui-server:
     cd yak_ui && vite --port 3001
 run-ui-build:

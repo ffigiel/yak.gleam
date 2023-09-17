@@ -1,0 +1,11 @@
+{
+    auto_https off
+}
+https://yak.localhost:3000 {
+	tls cert.pem cert.key.pem
+	reverse_proxy http://localhost:3001
+}
+https://api.yak.localhost:3000 {
+	tls cert.pem cert.key.pem
+	reverse_proxy http://localhost:3002
+}
