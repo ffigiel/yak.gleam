@@ -1,16 +1,10 @@
-import gleam/dynamic.{type Dynamic}
-import gleam/fetch
 import gleam/io
-import gleam/http
-import gleam/http/request
 import lustre
-import lustre/attribute
 import lustre/effect
 import lustre/element
-import lustre/element/html
-import lustre/event
-import yak_common
-import gleam/javascript/promise
+import yak_ui/pages/login
+import yak_ui/pages/init
+import yak_ui/core
 
 pub fn main() {
   let app = lustre.application(init_state, update, view)
@@ -18,120 +12,65 @@ pub fn main() {
 }
 
 type State {
-  State(email: String, password: String)
+  State(current_page: CurrentPage)
+}
+
+type CurrentPage {
+  InitPage(init.State, core.Page(init.State, init.Action))
+  LoginPage(login.State, core.Page(login.State, login.Action))
 }
 
 fn init_state(_flags) {
-  #(State(email: "", password: ""), effect.none())
+  let page = init.page()
+  let #(page_state, page_effect) = page.init()
+  #(
+    State(current_page: InitPage(page_state, page)),
+    effect.map(page_effect, fn(fx) { PageAction(InitAction(fx)) }),
+  )
 }
 
 pub type Action {
-  GotEmail(value: String)
-  GotPassword(value: String)
-  SubmittedForm
-  SubmittedLogoutForm
+  PageAction(PageAction)
   Todo
 }
 
+pub type PageAction {
+  InitAction(init.Action)
+  LoginAction(login.Action)
+}
+
 fn update(state: State, action: Action) {
-  case action {
-    GotEmail(value) -> #(State(..state, email: value), effect.none())
-    GotPassword(value) -> #(State(..state, password: value), effect.none())
-    SubmittedForm -> #(state, {
-      use dispatch <- effect.from
-      let body =
-        yak_common.LoginRequest(email: state.email, password: state.password)
-        |> yak_common.login_request_to_json
-      let request =
-        request.new()
-        |> request.set_method(http.Post)
-        |> request.set_scheme(http.Https)
-        |> request.set_host("api.yak.localhost:3000")
-        |> request.set_path("login")
-        |> request.set_body(body)
-        |> fetch.to_fetch_request()
-      let options =
-        fetch.make_options()
-        |> fetch.with_credentials(fetch.Include)
-      let response =
-        request
-        |> fetch.raw_send_with_options(options)
-        |> promise.try_await(fn(resp) {
-          promise.resolve(Ok(fetch.from_fetch_response(resp)))
-        })
-      io.debug(response)
-      dispatch(Todo)
-    })
-    SubmittedLogoutForm -> #(state, {
-      use dispatch <- effect.from
-      let request =
-        request.new()
-        |> request.set_method(http.Post)
-        |> request.set_scheme(http.Https)
-        |> request.set_host("api.yak.localhost:3000")
-        |> request.set_path("logout")
-        |> fetch.to_fetch_request()
-      let options =
-        fetch.make_options()
-        |> fetch.with_credentials(fetch.Include)
-      let response =
-        request
-        |> fetch.raw_send_with_options(options)
-        |> promise.try_await(fn(resp) {
-          promise.resolve(Ok(fetch.from_fetch_response(resp)))
-        })
-      io.debug(response)
-      dispatch(Todo)
-    })
-    Todo -> #(state, effect.none())
+  case #(state.current_page, action) {
+    #(InitPage(s, p), PageAction(InitAction(a))) -> {
+      let #(new_page_state, page_effect) = p.update(s, a)
+      #(
+        State(..state, current_page: InitPage(new_page_state, p)),
+        effect.map(page_effect, fn(fx) { PageAction(InitAction(fx)) }),
+      )
+    }
+    #(InitPage(_, _), _) -> {
+      io.debug("Incompatible state")
+      #(state, effect.none())
+    }
+    #(LoginPage(s, p), PageAction(LoginAction(a))) -> {
+      let #(new_page_state, page_effect) = p.update(s, a)
+      #(
+        State(..state, current_page: LoginPage(new_page_state, p)),
+        effect.map(page_effect, fn(fx) { PageAction(LoginAction(fx)) }),
+      )
+    }
+    #(LoginPage(_, _), _) -> {
+      io.debug("Incompatible state")
+      #(state, effect.none())
+    }
   }
 }
 
 fn view(state: State) {
-  html.div([], [view_logout_form(state), view_login_form(state)])
+  case state.current_page {
+    InitPage(s, p) ->
+      element.map(p.view(s), fn(fx) { PageAction(InitAction(fx)) })
+    LoginPage(s, p) ->
+      element.map(p.view(s), fn(fx) { PageAction(LoginAction(fx)) })
+  }
 }
-
-fn view_logout_form(_state: State) {
-  html.form([handle_submit(SubmittedLogoutForm)], [
-    html.p([], [html.button([], [element.text("Logout")])]),
-  ])
-}
-
-fn view_login_form(state: State) {
-  html.form([handle_submit(SubmittedForm)], [
-    html.p([], [
-      html.label([], [
-        html.span([], [element.text("Email")]),
-        html.input([
-          event.on_input(GotEmail),
-          attribute.value(dynamic.from(state.email)),
-          attribute.type_("email"),
-        ]),
-      ]),
-    ]),
-    html.p([], [
-      html.label([], [
-        html.span([], [element.text("Password")]),
-        html.input([
-          event.on_input(GotPassword),
-          attribute.value(dynamic.from(state.password)),
-          attribute.type_("password"),
-        ]),
-      ]),
-    ]),
-    html.p([], [html.button([], [element.text("Submit")])]),
-  ])
-}
-
-fn handle_submit(msg) -> attribute.Attribute(a) {
-  event.on("submit", fn(event) {
-    prevent_default_on_event(event)
-    Ok(msg)
-  })
-}
-
-@external(javascript, "/ffi.mjs", "preventDefaultOnEvent")
-fn prevent_default_on_event(a: Dynamic) -> Nil
-//
-//@external(javascript, "/ffi.mjs", "apiRequest")
-//fn api_request(path: String, body: String) -> Dynamic
