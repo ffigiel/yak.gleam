@@ -1,8 +1,8 @@
 import gleam/pgo
 import gleam/result
 import gleam/string
-import gleam/dynamic.{Dynamic}
-import yak_backend/user.{User}
+import gleam/dynamic.{type Dynamic}
+import yak_backend/user.{type User, User}
 
 pub type DbError {
   NotFound
@@ -43,7 +43,7 @@ pub fn get_user_by_email(
     sql,
     db,
     [pgo.text(email)],
-    dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
+    dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_array),
   )
   |> result.map(fn(data) {
     User(pk: data.0, email: data.1, password_hash: data.2)
@@ -52,7 +52,7 @@ pub fn get_user_by_email(
 
 pub fn get_user_by_session_id(
   db: pgo.Connection,
-  session_id: BitString,
+  session_id: BitArray,
 ) -> Result(User, DbError) {
   let sql =
     "
@@ -68,7 +68,7 @@ pub fn get_user_by_session_id(
     sql,
     db,
     [pgo.bytea(session_id)],
-    dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_string),
+    dynamic.tuple3(dynamic.int, dynamic.string, dynamic.bit_array),
   )
   |> result.map(fn(data) {
     User(pk: data.0, email: data.1, password_hash: data.2)
@@ -80,7 +80,7 @@ pub fn get_user_by_session_id(
 pub fn create_session(
   db: pgo.Connection,
   user_pk: Int,
-  session_id: BitString,
+  session_id: BitArray,
 ) -> Result(Nil, DbError) {
   let sql =
     "
@@ -101,7 +101,7 @@ pub fn create_session(
 
 pub fn check_session_exists(
   db: pgo.Connection,
-  session_id: BitString,
+  session_id: BitArray,
 ) -> Result(Nil, DbError) {
   let sql =
     "
@@ -116,7 +116,7 @@ pub fn check_session_exists(
 
 pub fn delete_session(
   db: pgo.Connection,
-  session_id: BitString,
+  session_id: BitArray,
 ) -> Result(Nil, DbError) {
   let sql =
     "

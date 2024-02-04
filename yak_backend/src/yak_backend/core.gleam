@@ -13,7 +13,7 @@ pub type LoginError {
 pub fn login(
   db: pgo.Connection,
   req: yak_common.LoginRequest,
-) -> Result(#(user.User, BitString), LoginError) {
+) -> Result(#(user.User, BitArray), LoginError) {
   db.get_user_by_email(db, req.email)
   |> result.map_error(LoginUserLookupError)
   |> result.then(fn(user) {
@@ -24,7 +24,7 @@ pub fn login(
   })
 }
 
-fn gen_session_id() -> BitString {
+fn gen_session_id() -> BitArray {
   crypto.strong_random_bytes(32)
 }
 
@@ -36,7 +36,7 @@ pub type LogoutError {
 
 pub fn logout(
   db: pgo.Connection,
-  session_id: BitString,
+  session_id: BitArray,
 ) -> Result(Nil, LogoutError) {
   db.check_session_exists(db, session_id)
   |> result.map_error(fn(err) {

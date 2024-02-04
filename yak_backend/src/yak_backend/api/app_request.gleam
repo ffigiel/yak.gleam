@@ -4,11 +4,11 @@ import gleam/string
 import gleam/http/cookie
 import gleam/list
 import gleam/result
-import gleam/option.{Option}
+import gleam/option.{type Option}
 import gleam/crypto
-import gleam/http/request.{Request}
+import gleam/http/request.{type Request}
 import gleam/pgo
-import yak_backend/user.{User}
+import yak_backend/user.{type User}
 import yak_backend/db
 
 pub type AppRequest {
@@ -16,15 +16,15 @@ pub type AppRequest {
     db: pgo.Connection,
     request_id: String,
     auth_info: Option(AuthInfo),
-    http: Request(BitString),
+    http: Request(BitArray),
   )
 }
 
 pub type AuthInfo {
-  AuthInfo(user: User, session_id: BitString)
+  AuthInfo(user: User, session_id: BitArray)
 }
 
-pub fn new(request: Request(BitString), db: pgo.Connection) -> AppRequest {
+pub fn new(request: Request(BitArray), db: pgo.Connection) -> AppRequest {
   let request_id = gen_request_id()
   let auth_info =
     fetch_requst_user(request, db)
@@ -60,18 +60,16 @@ fn fetch_requst_user(
       db.NotFound -> "Warning"
       _ -> "Error"
     }
-    io.println(string.concat([
-      log_level,
-      ": error fetching user: ",
-      string.inspect(err),
-    ]))
+    io.println(
+      string.concat([log_level, ": error fetching user: ", string.inspect(err)]),
+    )
   })
   |> result.map(fn(user) { AuthInfo(user, session_id) })
 }
 
 fn find_session_id_in_cookies(
   cookies: List(#(String, String)),
-) -> Result(BitString, Nil) {
+) -> Result(BitArray, Nil) {
   list.find(cookies, fn(item) { item.0 == "session_id" })
   |> result.try(fn(item) {
     item.1

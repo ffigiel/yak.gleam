@@ -1,22 +1,22 @@
-import gleam/bit_builder.{BitBuilder}
+import gleam/bytes_builder.{type BytesBuilder}
 import gleam/erlang
 import gleam/http
-import gleam/http/request.{Request}
-import gleam/http/response.{Response}
+import gleam/http/request.{type Request}
+import gleam/http/response.{type Response}
 import gleam/int
 import gleam/io
 import gleam/option
 import gleam/pgo
 import gleam/string
-import yak_backend/api/app_request.{AppRequest}
+import yak_backend/api/app_request.{type AppRequest}
 import yak_backend/api/utils
 
 type AppService =
-  fn(AppRequest) -> Response(BitBuilder)
+  fn(AppRequest) -> Response(BytesBuilder)
 
 pub fn app_request(db: pgo.Connection) {
   fn(service) {
-    fn(request: Request(BitString)) {
+    fn(request: Request(BitArray)) {
       let app_request = app_request.new(request, db)
       service(app_request)
     }
@@ -63,10 +63,9 @@ pub fn rescue(service: AppService) -> AppService {
     case result {
       Ok(response) -> response
       Error(crash) -> {
-        io.println(string.concat([
-          "Unhandled Exception: ",
-          string.inspect(crash),
-        ]))
+        io.println(
+          string.concat(["Unhandled Exception: ", string.inspect(crash)]),
+        )
         utils.internal_server_error()
       }
     }
