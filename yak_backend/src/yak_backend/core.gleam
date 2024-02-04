@@ -14,6 +14,7 @@ pub fn login(
   db: pgo.Connection,
   req: yak_common.LoginRequest,
 ) -> Result(#(user.User, BitArray), LoginError) {
+  // TODO check password
   db.get_user_by_email(db, req.email)
   |> result.map_error(LoginUserLookupError)
   |> result.then(fn(user) {

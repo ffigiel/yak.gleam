@@ -29,6 +29,7 @@ pub type Action {
   GotEmail(value: String)
   GotPassword(value: String)
   SubmittedForm
+  SubmittedLogoutForm
   Todo
 }
 
@@ -61,11 +62,42 @@ fn update(state: State, action: Action) {
       io.debug(response)
       dispatch(Todo)
     })
+    SubmittedLogoutForm -> #(state, {
+      use dispatch <- effect.from
+      let request =
+        request.new()
+        |> request.set_method(http.Post)
+        |> request.set_scheme(http.Https)
+        |> request.set_host("api.yak.localhost:3000")
+        |> request.set_path("logout")
+        |> fetch.to_fetch_request()
+      let options =
+        fetch.make_options()
+        |> fetch.with_credentials(fetch.Include)
+      let response =
+        request
+        |> fetch.raw_send_with_options(options)
+        |> promise.try_await(fn(resp) {
+          promise.resolve(Ok(fetch.from_fetch_response(resp)))
+        })
+      io.debug(response)
+      dispatch(Todo)
+    })
     Todo -> #(state, effect.none())
   }
 }
 
 fn view(state: State) {
+  html.div([], [view_logout_form(state), view_login_form(state)])
+}
+
+fn view_logout_form(_state: State) {
+  html.form([handle_submit(SubmittedLogoutForm)], [
+    html.p([], [html.button([], [element.text("Logout")])]),
+  ])
+}
+
+fn view_login_form(state: State) {
   html.form([handle_submit(SubmittedForm)], [
     html.p([], [
       html.label([], [
@@ -100,6 +132,6 @@ fn handle_submit(msg) -> attribute.Attribute(a) {
 
 @external(javascript, "/ffi.mjs", "preventDefaultOnEvent")
 fn prevent_default_on_event(a: Dynamic) -> Nil
-
-@external(javascript, "/ffi.mjs", "apiRequest")
-fn api_request(path: String, body: String) -> Dynamic
+//
+//@external(javascript, "/ffi.mjs", "apiRequest")
+//fn api_request(path: String, body: String) -> Dynamic
