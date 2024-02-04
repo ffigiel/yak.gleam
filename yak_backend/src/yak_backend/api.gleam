@@ -1,4 +1,3 @@
-import gleam/base
 import gleam/bit_array
 import gleam/http.{Get, Post}
 import gleam/http/cors
@@ -34,11 +33,22 @@ pub fn stack(db: pgo.Connection) {
 
 fn service(request: AppRequest) {
   let path = request.path_segments(request.http)
-  case request.http.method, path {
-    Post, ["login"] -> login(request)
-    Post, ["logout"] -> logout(request)
+  case path, request.http.method {
+    ["app-context"], Get -> app_context(request)
+    ["login"], Post -> login(request)
+    ["logout"], Post -> logout(request)
     _, _ -> not_found(request)
   }
+}
+
+fn app_context(request: AppRequest) {
+  yak_common.AppContextResponse(
+    user: option.map(request.auth_info, fn(auth_info) {
+      yak_common.User(email: auth_info.user.email)
+    }),
+  )
+  |> yak_common.app_context_response_to_json
+  |> utils.string_response(200, _)
 }
 
 fn login(request: AppRequest) {
@@ -60,7 +70,6 @@ fn login(request: AppRequest) {
           "Set-Cookie",
           make_session_cookie(session_id),
         )
-        |> response.prepend_header("Set-Cookie", "Foo=Bar;")
       }
       Error(core.LoginUserLookupError(db.NotFound)) -> {
         utils.string_response(400, "User not found")
@@ -79,7 +88,7 @@ fn login(request: AppRequest) {
 fn make_session_cookie(session_id: BitArray) -> String {
   cookie.set_header(
     "session_id",
-    base.url_encode64(session_id, False),
+    bit_array.base64_url_encode(session_id, False),
     cookie.Attributes(
       // Expire the cookie in two weeks
       max_age: option.Some(2 * 7 * 24 * 60 * 60),

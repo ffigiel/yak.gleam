@@ -1,5 +1,38 @@
-import gleam/json
-import gleam/dynamic
+import gleam/json.{type Json}
+import gleam/dynamic.{type Decoder}
+import gleam/option.{type Option}
+
+pub type AppContextResponse {
+  AppContextResponse(user: Option(User))
+}
+
+pub type User {
+  User(email: String)
+}
+
+pub fn app_context_response_from_json(
+  string: String,
+) -> Result(AppContextResponse, json.DecodeError) {
+  let decoder =
+    dynamic.decode1(
+      AppContextResponse,
+      dynamic.field("user", dynamic.optional(user_decoder())),
+    )
+  json.decode(from: string, using: decoder)
+}
+
+fn user_decoder() -> Decoder(User) {
+  dynamic.decode1(User, dynamic.field("email", dynamic.string))
+}
+
+pub fn app_context_response_to_json(obj: AppContextResponse) -> String {
+  json.object([#("user", json.nullable(obj.user, user_to_json))])
+  |> json.to_string
+}
+
+fn user_to_json(obj: User) -> Json {
+  json.object([#("email", json.string(obj.email))])
+}
 
 pub type LoginRequest {
   LoginRequest(email: String, password: String)
