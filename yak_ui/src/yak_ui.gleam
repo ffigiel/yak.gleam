@@ -12,7 +12,7 @@ pub fn main() {
 }
 
 type State {
-  State(current_page: CurrentPage)
+  State(current_page: CurrentPage, shared_state: Nil)
 }
 
 type CurrentPage {
@@ -24,7 +24,7 @@ fn init_state(_flags) {
   let page = init.page()
   let #(page_state, page_effect) = page.init()
   #(
-    State(current_page: InitPage(page_state, page)),
+    State(current_page: InitPage(page_state, page), shared_state: Nil),
     effect.map(page_effect, fn(fx) { PageAction(InitAction(fx)) }),
   )
 }

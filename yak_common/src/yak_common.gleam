@@ -13,12 +13,14 @@ pub type User {
 pub fn app_context_response_from_json(
   string: String,
 ) -> Result(AppContextResponse, json.DecodeError) {
-  let decoder =
-    dynamic.decode1(
-      AppContextResponse,
-      dynamic.field("user", dynamic.optional(user_decoder())),
-    )
-  json.decode(from: string, using: decoder)
+  json.decode(from: string, using: app_context_response_decoder())
+}
+
+pub fn app_context_response_decoder() -> Decoder(AppContextResponse) {
+  dynamic.decode1(
+    AppContextResponse,
+    dynamic.field("user", dynamic.optional(user_decoder())),
+  )
 }
 
 fn user_decoder() -> Decoder(User) {
