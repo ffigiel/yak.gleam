@@ -1,5 +1,8 @@
 {
-    auto_https off
+	auto_https off
+	log {
+		format console
+	}
 }
 https://yak.localhost:3000 {
 	tls cert.pem cert.key.pem
