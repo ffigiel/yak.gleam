@@ -4,13 +4,13 @@ import gleam/io
 import gleam/http
 import gleam/http/request
 import lustre/attribute
-import lustre/effect.{type Effect}
+import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import yak_common
 import yak_ui/ffi
-import yak_ui/core.{type Page, Page}
+import yak_ui/core.{type AppEffect, type Page, Page}
 import gleam/javascript/promise
 
 pub fn page() -> Page(State, Action) {
@@ -22,7 +22,7 @@ pub opaque type State {
 }
 
 fn init() {
-  #(State(email: "", password: ""), effect.none())
+  #(State(email: "", password: ""), core.PageEffect(effect.none()))
 }
 
 pub opaque type Action {
@@ -33,57 +33,71 @@ pub opaque type Action {
   Todo
 }
 
-fn update(state: State, action: Action) -> #(State, Effect(Action)) {
+fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
-    GotEmail(value) -> #(State(..state, email: value), effect.none())
-    GotPassword(value) -> #(State(..state, password: value), effect.none())
-    SubmittedForm -> #(state, {
-      use dispatch <- effect.from
-      let body =
-        yak_common.LoginRequest(email: state.email, password: state.password)
-        |> yak_common.login_request_to_json
-      let request =
-        request.new()
-        |> request.set_method(http.Post)
-        |> request.set_scheme(http.Https)
-        |> request.set_host("api.yak.localhost:3000")
-        |> request.set_path("login")
-        |> request.set_body(body)
-        |> fetch.to_fetch_request()
-      let options =
-        fetch.make_options()
-        |> fetch.with_credentials(fetch.Include)
-      let response =
-        request
-        |> fetch.raw_send_with_options(options)
-        |> promise.try_await(fn(resp) {
-          promise.resolve(Ok(fetch.from_fetch_response(resp)))
-        })
-      io.debug(response)
-      dispatch(Todo)
-    })
-    SubmittedLogoutForm -> #(state, {
-      use dispatch <- effect.from
-      let request =
-        request.new()
-        |> request.set_method(http.Post)
-        |> request.set_scheme(http.Https)
-        |> request.set_host("api.yak.localhost:3000")
-        |> request.set_path("logout")
-        |> fetch.to_fetch_request()
-      let options =
-        fetch.make_options()
-        |> fetch.with_credentials(fetch.Include)
-      let response =
-        request
-        |> fetch.raw_send_with_options(options)
-        |> promise.try_await(fn(resp) {
-          promise.resolve(Ok(fetch.from_fetch_response(resp)))
-        })
-      io.debug(response)
-      dispatch(Todo)
-    })
-    Todo -> #(state, effect.none())
+    GotEmail(value) -> #(
+      State(..state, email: value),
+      core.PageEffect(effect.none()),
+    )
+    GotPassword(value) -> #(
+      State(..state, password: value),
+      core.PageEffect(effect.none()),
+    )
+    SubmittedForm -> #(
+      state,
+      {
+        use dispatch <- effect.from
+        let body =
+          yak_common.LoginRequest(email: state.email, password: state.password)
+          |> yak_common.login_request_to_json
+        let request =
+          request.new()
+          |> request.set_method(http.Post)
+          |> request.set_scheme(http.Https)
+          |> request.set_host("api.yak.localhost:3000")
+          |> request.set_path("login")
+          |> request.set_body(body)
+          |> fetch.to_fetch_request()
+        let options =
+          fetch.make_options()
+          |> fetch.with_credentials(fetch.Include)
+        let response =
+          request
+          |> fetch.raw_send_with_options(options)
+          |> promise.try_await(fn(resp) {
+            promise.resolve(Ok(fetch.from_fetch_response(resp)))
+          })
+        io.debug(response)
+        dispatch(Todo)
+      }
+      |> core.PageEffect,
+    )
+    SubmittedLogoutForm -> #(
+      state,
+      {
+        use dispatch <- effect.from
+        let request =
+          request.new()
+          |> request.set_method(http.Post)
+          |> request.set_scheme(http.Https)
+          |> request.set_host("api.yak.localhost:3000")
+          |> request.set_path("logout")
+          |> fetch.to_fetch_request()
+        let options =
+          fetch.make_options()
+          |> fetch.with_credentials(fetch.Include)
+        let response =
+          request
+          |> fetch.raw_send_with_options(options)
+          |> promise.try_await(fn(resp) {
+            promise.resolve(Ok(fetch.from_fetch_response(resp)))
+          })
+        io.debug(response)
+        dispatch(Todo)
+      }
+      |> core.PageEffect,
+    )
+    Todo -> #(state, core.PageEffect(effect.none()))
   }
 }
 

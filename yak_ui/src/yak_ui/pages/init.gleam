@@ -1,14 +1,13 @@
-import lustre/effect.{type Effect}
+import lustre/effect
 import gleam/http/response.{type Response}
 import gleam/http
 import gleam/string
 import gleam/dynamic.{type Dynamic}
-import gleam/io
 import gleam/result
 import gleam/http/request
 import lustre/element.{type Element}
 import lustre/element/html
-import yak_ui/core.{type Page, Page}
+import yak_ui/core.{type AppEffect, type Page, Page}
 import yak_common
 import gleam/fetch
 import gleam/javascript/promise.{type Promise}
@@ -33,7 +32,7 @@ fn init() {
     })
     Nil
   }
-  #(StateLoading, effect)
+  #(StateLoading, core.PageEffect(effect))
 }
 
 fn fetch_app_context() -> Promise(Result(yak_common.AppContextResponse, String)) {
@@ -78,15 +77,13 @@ pub opaque type Action {
   GotAppContext(Result(yak_common.AppContextResponse, String))
 }
 
-fn update(state: State, action: Action) -> #(State, Effect(Action)) {
+fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
-    GotAppContext(Ok(_app_context)) -> {
-      // TODO bubble up the app_context
-      #(state, effect.none())
+    GotAppContext(Ok(app_context)) -> {
+      #(state, core.SharedEffect(core.GotAppContext(app_context)))
     }
     GotAppContext(Error(msg)) -> {
-      // TODO bubble up the app_context
-      #(StateError(msg), effect.none())
+      #(StateError(msg), core.PageEffect(effect.none()))
     }
   }
 }
