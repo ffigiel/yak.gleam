@@ -1,4 +1,4 @@
-import gleam/base
+import gleam/bit_array
 import gleam/io
 import gleam/string
 import gleam/http/cookie
@@ -44,7 +44,7 @@ pub fn get_user(auth_info: Option(AuthInfo)) -> Option(User) {
 
 fn gen_request_id() -> String {
   crypto.strong_random_bytes(8)
-  |> base.url_encode64(False)
+  |> bit_array.base64_url_encode(False)
 }
 
 fn fetch_requst_user(
@@ -73,7 +73,7 @@ fn find_session_id_in_cookies(
   list.find(cookies, fn(item) { item.0 == "session_id" })
   |> result.try(fn(item) {
     item.1
-    |> base.url_decode64()
+    |> bit_array.base64_url_decode
     |> result.map_error(fn(_) { Nil })
   })
 }
