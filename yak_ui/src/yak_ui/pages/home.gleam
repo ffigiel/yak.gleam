@@ -1,28 +1,18 @@
-import gleam/dynamic
-import gleam/fetch
-import gleam/io
-import gleam/http
-import gleam/http/request
-import lustre/attribute
 import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/event
-import yak_common
-import yak_ui/ffi
 import yak_ui/core.{type AppEffect, type Page, Page}
-import gleam/javascript/promise
 
 pub fn page() -> Page(State, Action) {
   Page(init: init, update: update, view: view)
 }
 
 pub opaque type State {
-  State(email: String, password: String)
+  State
 }
 
 fn init() {
-  #(State(email: "", password: ""), core.PageEffect(effect.none()))
+  #(State, core.PageEffect(effect.none()))
 }
 
 pub opaque type Action {
