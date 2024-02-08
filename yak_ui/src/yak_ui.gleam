@@ -3,6 +3,7 @@ import yak_ui/core.{
   type AppEffect, type Route, type SharedAction, PageEffect, SharedEffect,
 }
 import gleam/option.{type Option, None, Some}
+import gleam/string
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element
@@ -102,38 +103,39 @@ fn update(state: State, action: AppAction) {
           |> set_page(core.LoginRoute)
       }
     }
-    #(InitPage(s, p), GotPageAction(InitAction(a))) -> {
+    #(page, GotPageAction(page_action)) -> {
+      let #(current_page, effect) = update_page(page, page_action)
+      #(State(..state, current_page: current_page), effect)
+    }
+  }
+}
+
+fn update_page(current_state: CurrentPage, action: PageAction) {
+  case #(current_state, action) {
+    #(InitPage(s, p), InitAction(a)) -> {
       let #(new_page_state, page_effect) = p.update(s, a)
       #(
-        State(..state, current_page: InitPage(new_page_state, p)),
+        InitPage(new_page_state, p),
         effect_from_app_effect(page_effect, InitAction),
       )
     }
-    #(InitPage(_, _), GotPageAction(_)) -> {
-      io.debug("Incompatible state")
-      #(state, effect.none())
-    }
-    #(LoginPage(s, p), GotPageAction(LoginAction(a))) -> {
+    #(LoginPage(s, p), LoginAction(a)) -> {
       let #(new_page_state, page_effect) = p.update(s, a)
       #(
-        State(..state, current_page: LoginPage(new_page_state, p)),
+        LoginPage(new_page_state, p),
         effect_from_app_effect(page_effect, LoginAction),
       )
     }
-    #(LoginPage(_, _), _) -> {
-      io.debug("Incompatible state")
-      #(state, effect.none())
-    }
-    #(HomePage(s, p), GotPageAction(HomeAction(a))) -> {
+    #(HomePage(s, p), HomeAction(a)) -> {
       let #(new_page_state, page_effect) = p.update(s, a)
       #(
-        State(..state, current_page: HomePage(new_page_state, p)),
+        HomePage(new_page_state, p),
         effect_from_app_effect(page_effect, HomeAction),
       )
     }
-    #(HomePage(_, _), _) -> {
-      io.debug("Incompatible state")
-      #(state, effect.none())
+    invalid -> {
+      io.debug("Invalid state/action: " <> string.inspect(invalid))
+      #(current_state, effect.none())
     }
   }
 }
