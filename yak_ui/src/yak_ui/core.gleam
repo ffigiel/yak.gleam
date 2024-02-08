@@ -18,3 +18,9 @@ pub type AppEffect(action) {
 pub type SharedAction {
   GotAppContext(yak_common.AppContextResponse)
 }
+
+pub type Route {
+  InitRoute
+  LoginRoute
+  HomeRoute
+}
