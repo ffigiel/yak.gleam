@@ -80,14 +80,23 @@ pub opaque type Action {
 fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
     GotAppContext(Ok(app_context)) -> {
-      #(state, core.SharedEffect(core.GotAppContext(app_context)))
+      #(
+        state,
+        core.SharedEffect(core.GotAuthState(core.Authenticated(app_context))),
+      )
     }
     GotAppContext(Error(msg)) -> {
-      #(StateError(msg), core.PageEffect(effect.none()))
+      #(
+        StateError(msg),
+        core.SharedEffect(core.GotAuthState(core.AuthError(msg))),
+      )
     }
   }
 }
 
-fn view(_state: State) -> Element(Action) {
-  html.p([], [element.text("Init")])
+fn view(state: State) -> Element(Action) {
+  case state {
+    StateError(msg) -> html.p([], [element.text("Error: " <> msg)])
+    _ -> html.p([], [element.text("Loading")])
+  }
 }

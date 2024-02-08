@@ -16,7 +16,14 @@ pub type AppEffect(action) {
 }
 
 pub type SharedAction {
-  GotAppContext(yak_common.AppContextResponse)
+  GotAuthState(AuthState)
+}
+
+pub type AuthState {
+  AuthLoading
+  AuthError(String)
+  Authenticated(yak_common.AppContextResponse)
+  Unauthenticated
 }
 
 pub type Route {

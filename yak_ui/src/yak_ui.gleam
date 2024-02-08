@@ -2,12 +2,10 @@ import gleam/io
 import yak_ui/core.{
   type AppEffect, type Route, type SharedAction, PageEffect, SharedEffect,
 }
-import gleam/option.{type Option, None, Some}
 import gleam/string
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element
-import yak_common
 import yak_ui/pages/home
 import yak_ui/pages/init
 import yak_ui/pages/login
@@ -18,10 +16,7 @@ pub fn main() {
 }
 
 type State {
-  State(
-    current_page: CurrentPage,
-    app_context: Option(yak_common.AppContextResponse),
-  )
+  State(current_page: CurrentPage, auth_state: core.AuthState)
 }
 
 type CurrentPage {
@@ -80,7 +75,10 @@ fn effect_from_app_effect(
 
 fn init_app(_flags) {
   let page = init.page()
-  State(current_page: InitPage(page.init().0, page), app_context: None)
+  State(
+    current_page: InitPage(page.init().0, page),
+    auth_state: core.AuthLoading,
+  )
   |> set_page(core.InitRoute)
 }
 
@@ -91,16 +89,13 @@ pub type AppAction {
 
 fn update(state: State, action: AppAction) {
   case #(state.current_page, action) {
-    #(_, GotSharedAction(core.GotAppContext(ctx))) -> {
-      let state = State(..state, app_context: Some(ctx))
-      case ctx.user {
-        _ ->
-          state
-          |> set_page(core.HomeRoute)
-
-        _ ->
-          state
-          |> set_page(core.LoginRoute)
+    #(_, GotSharedAction(core.GotAuthState(auth_state))) -> {
+      let state = State(..state, auth_state: auth_state)
+      case auth_state {
+        core.Authenticated(_) -> set_page(state, core.HomeRoute)
+        core.Unauthenticated -> set_page(state, core.LoginRoute)
+        // Other states are handled on the Init page
+        _ -> #(state, effect.none())
       }
     }
     #(page, GotPageAction(page_action)) -> {
