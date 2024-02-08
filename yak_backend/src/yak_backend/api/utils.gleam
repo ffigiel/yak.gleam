@@ -2,6 +2,10 @@ import gleam/bytes_builder.{type BytesBuilder}
 import gleam/bit_array
 import gleam/http/response.{type Response}
 
+pub fn unauthorized() -> Response(BytesBuilder) {
+  string_response(401, "Unauthorized")
+}
+
 pub fn not_found() -> Response(BytesBuilder) {
   string_response(404, "Not Found")
 }

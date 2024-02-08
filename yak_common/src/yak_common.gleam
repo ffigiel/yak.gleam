@@ -3,7 +3,7 @@ import gleam/dynamic.{type Decoder}
 import gleam/option.{type Option}
 
 pub type AppContextResponse {
-  AppContextResponse(user: Option(User))
+  AppContextResponse(user: User)
 }
 
 pub type User {
@@ -17,10 +17,7 @@ pub fn app_context_response_from_json(
 }
 
 pub fn app_context_response_decoder() -> Decoder(AppContextResponse) {
-  dynamic.decode1(
-    AppContextResponse,
-    dynamic.field("user", dynamic.optional(user_decoder())),
-  )
+  dynamic.decode1(AppContextResponse, dynamic.field("user", user_decoder()))
 }
 
 fn user_decoder() -> Decoder(User) {
@@ -28,7 +25,7 @@ fn user_decoder() -> Decoder(User) {
 }
 
 pub fn app_context_response_to_json(obj: AppContextResponse) -> String {
-  json.object([#("user", json.nullable(obj.user, user_to_json))])
+  json.object([#("user", user_to_json(obj.user))])
   |> json.to_string
 }
 

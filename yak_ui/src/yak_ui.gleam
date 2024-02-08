@@ -94,11 +94,11 @@ fn update(state: State, action: AppAction) {
     #(_, GotSharedAction(core.GotAppContext(ctx))) -> {
       let state = State(..state, app_context: Some(ctx))
       case ctx.user {
-        Some(_) ->
+        _ ->
           state
           |> set_page(core.HomeRoute)
 
-        None ->
+        _ ->
           state
           |> set_page(core.LoginRoute)
       }

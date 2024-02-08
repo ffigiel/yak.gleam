@@ -4,7 +4,7 @@ import gleam/http/cors
 import gleam/http/cookie
 import gleam/http/request
 import gleam/http/response
-import gleam/option
+import gleam/option.{None, Some}
 import gleam/io
 import gleam/pgo
 import gleam/result
@@ -42,13 +42,15 @@ fn service(request: AppRequest) {
 }
 
 fn app_context(request: AppRequest) {
-  yak_common.AppContextResponse(
-    user: option.map(request.auth_info, fn(auth_info) {
-      yak_common.User(email: auth_info.user.email)
-    }),
-  )
-  |> yak_common.app_context_response_to_json
-  |> utils.string_response(200, _)
+  case request.auth_info {
+    Some(auth_info) ->
+      yak_common.AppContextResponse(user: yak_common.User(
+        email: auth_info.user.email,
+      ))
+      |> yak_common.app_context_response_to_json
+      |> utils.string_response(200, _)
+    None -> utils.unauthorized()
+  }
 }
 
 fn login(request: AppRequest) {
