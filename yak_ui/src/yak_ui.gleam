@@ -62,16 +62,25 @@ pub type PageAction {
 fn update(state: State, action: AppAction) {
   case #(state.current_page, action) {
     #(_, GotSharedAction(core.GotAppContext(ctx))) -> {
-      let page = home.page()
-      let #(page_state, page_effect) = page.init()
-      #(
-        State(
-          ..state,
-          current_page: HomePage(page_state, page),
-          app_context: Some(ctx),
-        ),
-        effect_from_app_effect(page_effect, HomeAction),
-      )
+      let state = State(..state, app_context: Some(ctx))
+      case ctx.user {
+        Some(_) -> {
+          let page = home.page()
+          let #(page_state, page_effect) = page.init()
+          #(
+            State(..state, current_page: HomePage(page_state, page)),
+            effect_from_app_effect(page_effect, HomeAction),
+          )
+        }
+        None -> {
+          let page = init.page()
+          let #(page_state, page_effect) = page.init()
+          #(
+            State(..state, current_page: InitPage(page_state, page)),
+            effect_from_app_effect(page_effect, InitAction),
+          )
+        }
+      }
     }
     #(InitPage(s, p), GotPageAction(InitAction(a))) -> {
       let #(new_page_state, page_effect) = p.update(s, a)
