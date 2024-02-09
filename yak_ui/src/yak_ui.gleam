@@ -33,24 +33,29 @@ pub type PageAction {
 }
 
 fn set_page(state: State, route: Route) -> #(State, Effect(AppAction)) {
-  let #(current_page, page_effect) = case route {
+  case route {
     core.InitRoute -> {
       let #(page_state, page_effect) = init.page.init()
-      #(InitState(page_state), effect_from_app_effect(page_effect, InitAction))
+      #(
+        State(..state, current_page: InitState(page_state)),
+        effect_from_app_effect(page_effect, InitAction),
+      )
     }
     core.LoginRoute -> {
       let #(page_state, page_effect) = login.page.init()
       #(
-        LoginState(page_state),
+        State(..state, current_page: LoginState(page_state)),
         effect_from_app_effect(page_effect, LoginAction),
       )
     }
     core.HomeRoute -> {
       let #(page_state, page_effect) = home.page.init()
-      #(HomeState(page_state), effect_from_app_effect(page_effect, HomeAction))
+      #(
+        State(..state, current_page: HomeState(page_state)),
+        effect_from_app_effect(page_effect, HomeAction),
+      )
     }
   }
-  #(State(..state, current_page: current_page), page_effect)
 }
 
 fn effect_from_app_effect(
