@@ -17,7 +17,7 @@ pub fn main() {
 }
 
 type State {
-  State(current_page: PageState, shared: core.SharedState)
+  State(page: PageState, shared: core.SharedState)
 }
 
 type PageState {
@@ -37,21 +37,21 @@ fn set_page(state: State, route: Route) -> #(State, Effect(AppAction)) {
     core.InitRoute -> {
       let #(page_state, page_effect) = init.page.init(state.shared)
       #(
-        State(..state, current_page: InitState(page_state)),
+        State(..state, page: InitState(page_state)),
         effect_from_app_effect(page_effect, InitAction),
       )
     }
     core.LoginRoute -> {
       let #(page_state, page_effect) = login.page.init(state.shared)
       #(
-        State(..state, current_page: LoginState(page_state)),
+        State(..state, page: LoginState(page_state)),
         effect_from_app_effect(page_effect, LoginAction),
       )
     }
     core.HomeRoute -> {
       let #(page_state, page_effect) = home.page.init(state.shared)
       #(
-        State(..state, current_page: HomeState(page_state)),
+        State(..state, page: HomeState(page_state)),
         effect_from_app_effect(page_effect, HomeAction),
       )
     }
@@ -73,7 +73,7 @@ fn effect_from_app_effect(
 
 fn init_app(_flags) {
   let shared = core.SharedState(auth: core.AuthLoading)
-  State(current_page: InitState(init.page.init(shared).0), shared: shared)
+  State(page: InitState(init.page.init(shared).0), shared: shared)
   |> set_page(core.InitRoute)
 }
 
@@ -83,7 +83,7 @@ pub type AppAction {
 }
 
 fn update(state: State, action: AppAction) {
-  case #(state.current_page, action) {
+  case #(state.page, action) {
     #(_, GotSharedAction(core.GotAuthState(auth_state))) -> {
       let shared = core.SharedState(..state.shared, auth: auth_state)
       let state = State(..state, shared: shared)
@@ -95,18 +95,14 @@ fn update(state: State, action: AppAction) {
       }
     }
     #(page, GotPageAction(page_action)) -> {
-      let #(current_page, effect) = update_page(state.shared, page, page_action)
-      #(State(..state, current_page: current_page), effect)
+      let #(page, effect) = update_page(state.shared, page, page_action)
+      #(State(..state, page: page), effect)
     }
   }
 }
 
-fn update_page(
-  shared: core.SharedState,
-  current_state: PageState,
-  action: PageAction,
-) {
-  case #(current_state, action) {
+fn update_page(shared: core.SharedState, page: PageState, action: PageAction) {
+  case #(page, action) {
     #(InitState(s), InitAction(a)) -> {
       let #(new_page_state, page_effect) = init.page.update(shared, s, a)
       #(
@@ -130,13 +126,13 @@ fn update_page(
     }
     invalid -> {
       io.debug("Invalid state/action: " <> string.inspect(invalid))
-      #(current_state, effect.none())
+      #(page, effect.none())
     }
   }
 }
 
 fn view(state: State) {
-  case state.current_page {
+  case state.page {
     InitState(s) ->
       element.map(init.page.view(state.shared, s), fn(fx) {
         GotPageAction(InitAction(fx))
