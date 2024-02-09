@@ -17,7 +17,7 @@ pub fn main() {
 }
 
 type State {
-  State(current_page: PageState, auth_state: core.AuthState)
+  State(current_page: PageState, shared: core.SharedState)
 }
 
 type PageState {
@@ -74,7 +74,7 @@ fn effect_from_app_effect(
 fn init_app(_flags) {
   State(
     current_page: InitState(init.page.init().0),
-    auth_state: core.AuthLoading,
+    shared: core.SharedState(auth: core.AuthLoading),
   )
   |> set_page(core.InitRoute)
 }
@@ -87,7 +87,8 @@ pub type AppAction {
 fn update(state: State, action: AppAction) {
   case #(state.current_page, action) {
     #(_, GotSharedAction(core.GotAuthState(auth_state))) -> {
-      let state = State(..state, auth_state: auth_state)
+      let shared = core.SharedState(..state.shared, auth: auth_state)
+      let state = State(..state, shared: shared)
       case auth_state {
         core.Authenticated(_) -> set_page(state, core.HomeRoute)
         core.Unauthenticated -> set_page(state, core.LoginRoute)

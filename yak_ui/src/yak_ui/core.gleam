@@ -20,6 +20,10 @@ pub type SharedAction {
   GotAuthState(AuthState)
 }
 
+pub type SharedState {
+  SharedState(auth: AuthState)
+}
+
 pub type AuthState {
   AuthLoading
   AuthError(String)
