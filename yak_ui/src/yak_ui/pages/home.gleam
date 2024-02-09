@@ -2,9 +2,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import yak_ui/core.{type AppEffect, type Page, Page}
 
-pub fn page() -> Page(State, Action) {
-  Page(init: init, update: update, view: view)
-}
+pub const page = Page(init: init, update: update, view: view)
 
 pub opaque type State {
   State

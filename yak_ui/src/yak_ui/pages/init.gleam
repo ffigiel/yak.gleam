@@ -13,9 +13,7 @@ import yak_common
 import gleam/fetch
 import gleam/javascript/promise.{type Promise}
 
-pub fn page() -> Page(State, Action) {
-  Page(init: init, update: update, view: view)
-}
+pub const page = Page(init: init, update: update, view: view)
 
 pub opaque type State {
   StateLoading

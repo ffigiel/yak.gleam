@@ -13,9 +13,7 @@ import yak_ui/ffi
 import yak_ui/core.{type AppEffect, type Page, Page}
 import gleam/javascript/promise
 
-pub fn page() -> Page(State, Action) {
-  Page(init: init, update: update, view: view)
-}
+pub const page = Page(init: init, update: update, view: view)
 
 pub opaque type State {
   State(email: String, password: String)
