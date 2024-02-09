@@ -4,9 +4,9 @@ import yak_common
 
 pub type Page(state, action) {
   Page(
-    init: fn() -> #(state, AppEffect(action)),
-    update: fn(state, action) -> #(state, AppEffect(action)),
-    view: fn(state) -> Element(action),
+    init: fn(SharedState) -> #(state, AppEffect(action)),
+    update: fn(SharedState, state, action) -> #(state, AppEffect(action)),
+    view: fn(SharedState, state) -> Element(action),
   )
 }
 

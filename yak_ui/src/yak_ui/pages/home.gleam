@@ -8,7 +8,7 @@ pub opaque type State {
   State
 }
 
-fn init() {
+fn init(_shared) {
   #(State, core.NoEffect)
 }
 
@@ -16,12 +16,12 @@ pub opaque type Action {
   Todo
 }
 
-fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
+fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
     Todo -> #(state, core.NoEffect)
   }
 }
 
-fn view(_state: State) -> Element(Action) {
+fn view(_shared, _state: State) -> Element(Action) {
   html.p([], [element.text("Welcome, user")])
 }

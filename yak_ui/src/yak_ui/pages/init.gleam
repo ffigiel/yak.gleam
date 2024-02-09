@@ -20,7 +20,7 @@ pub opaque type State {
   StateError(String)
 }
 
-fn init() {
+fn init(_shared) {
   let effect = {
     use dispatch <- effect.from
     fetch_app_context()
@@ -120,7 +120,7 @@ pub opaque type Action {
   GotAuthState(core.AuthState)
 }
 
-fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
+fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
     GotAuthState(auth_state) -> {
       let fx = core.SharedEffect(core.GotAuthState(auth_state))
@@ -132,7 +132,7 @@ fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   }
 }
 
-fn view(state: State) -> Element(Action) {
+fn view(_shared, state: State) -> Element(Action) {
   case state {
     StateError(msg) -> html.p([], [element.text("Error: " <> msg)])
     _ -> html.p([], [element.text("Loading")])

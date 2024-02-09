@@ -19,7 +19,7 @@ pub opaque type State {
   State(email: String, password: String)
 }
 
-fn init() {
+fn init(_shared) {
   #(State(email: "", password: ""), core.NoEffect)
 }
 
@@ -31,7 +31,7 @@ pub opaque type Action {
   Todo
 }
 
-fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
+fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
     GotEmail(value) -> #(State(..state, email: value), core.NoEffect)
     GotPassword(value) -> #(State(..state, password: value), core.NoEffect)
@@ -93,7 +93,7 @@ fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   }
 }
 
-fn view(state: State) -> Element(Action) {
+fn view(_shared, state: State) -> Element(Action) {
   html.div([], [view_logout_form(state), view_login_form(state)])
 }
 
