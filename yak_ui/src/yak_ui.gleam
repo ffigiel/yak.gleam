@@ -17,13 +17,13 @@ pub fn main() {
 }
 
 type State {
-  State(current_page: CurrentPage, auth_state: core.AuthState)
+  State(current_page: PageState, auth_state: core.AuthState)
 }
 
-type CurrentPage {
-  InitPage(init.State)
-  LoginPage(login.State)
-  HomePage(home.State)
+type PageState {
+  InitState(init.State)
+  LoginState(login.State)
+  HomeState(home.State)
 }
 
 pub type PageAction {
@@ -35,19 +35,19 @@ pub type PageAction {
 fn set_page(state: State, route: Route) -> #(State, Effect(AppAction)) {
   let #(current_page, page_effect) = case route {
     core.InitRoute -> {
-      let page = init.page
-      let #(page_state, page_effect) = page.init()
-      #(InitPage(page_state), effect_from_app_effect(page_effect, InitAction))
+      let #(page_state, page_effect) = init.page.init()
+      #(InitState(page_state), effect_from_app_effect(page_effect, InitAction))
     }
     core.LoginRoute -> {
-      let page = login.page
-      let #(page_state, page_effect) = page.init()
-      #(LoginPage(page_state), effect_from_app_effect(page_effect, LoginAction))
+      let #(page_state, page_effect) = login.page.init()
+      #(
+        LoginState(page_state),
+        effect_from_app_effect(page_effect, LoginAction),
+      )
     }
     core.HomeRoute -> {
-      let page = home.page
-      let #(page_state, page_effect) = page.init()
-      #(HomePage(page_state), effect_from_app_effect(page_effect, HomeAction))
+      let #(page_state, page_effect) = home.page.init()
+      #(HomeState(page_state), effect_from_app_effect(page_effect, HomeAction))
     }
   }
   #(State(..state, current_page: current_page), page_effect)
@@ -68,7 +68,7 @@ fn effect_from_app_effect(
 
 fn init_app(_flags) {
   State(
-    current_page: InitPage(init.page.init().0),
+    current_page: InitState(init.page.init().0),
     auth_state: core.AuthLoading,
   )
   |> set_page(core.InitRoute)
@@ -97,26 +97,26 @@ fn update(state: State, action: AppAction) {
   }
 }
 
-fn update_page(current_state: CurrentPage, action: PageAction) {
+fn update_page(current_state: PageState, action: PageAction) {
   case #(current_state, action) {
-    #(InitPage(s), InitAction(a)) -> {
+    #(InitState(s), InitAction(a)) -> {
       let #(new_page_state, page_effect) = init.page.update(s, a)
       #(
-        InitPage(new_page_state),
+        InitState(new_page_state),
         effect_from_app_effect(page_effect, InitAction),
       )
     }
-    #(LoginPage(s), LoginAction(a)) -> {
+    #(LoginState(s), LoginAction(a)) -> {
       let #(new_page_state, page_effect) = login.page.update(s, a)
       #(
-        LoginPage(new_page_state),
+        LoginState(new_page_state),
         effect_from_app_effect(page_effect, LoginAction),
       )
     }
-    #(HomePage(s), HomeAction(a)) -> {
+    #(HomeState(s), HomeAction(a)) -> {
       let #(new_page_state, page_effect) = home.page.update(s, a)
       #(
-        HomePage(new_page_state),
+        HomeState(new_page_state),
         effect_from_app_effect(page_effect, HomeAction),
       )
     }
@@ -129,11 +129,11 @@ fn update_page(current_state: CurrentPage, action: PageAction) {
 
 fn view(state: State) {
   case state.current_page {
-    InitPage(s) ->
+    InitState(s) ->
       element.map(init.page.view(s), fn(fx) { GotPageAction(InitAction(fx)) })
-    LoginPage(s) ->
+    LoginState(s) ->
       element.map(login.page.view(s), fn(fx) { GotPageAction(LoginAction(fx)) })
-    HomePage(s) ->
+    HomeState(s) ->
       element.map(home.page.view(s), fn(fx) { GotPageAction(HomeAction(fx)) })
   }
 }
