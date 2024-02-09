@@ -1,6 +1,7 @@
 import gleam/io
 import yak_ui/core.{
-  type AppEffect, type Route, type SharedAction, PageEffect, SharedEffect,
+  type AppEffect, type Route, type SharedAction, NoEffect, PageEffect,
+  SharedEffect,
 }
 import gleam/string
 import lustre
@@ -70,6 +71,7 @@ fn effect_from_app_effect(
       effect.map(fx, fn(a) { GotPageAction(page_action_ctor(a)) })
     SharedEffect(a) ->
       effect.from(fn(dispatch) { dispatch(GotSharedAction(a)) })
+    NoEffect -> effect.none()
   }
 }
 

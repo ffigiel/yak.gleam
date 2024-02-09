@@ -22,7 +22,7 @@ pub opaque type State {
 }
 
 fn init() {
-  #(State(email: "", password: ""), core.PageEffect(effect.none()))
+  #(State(email: "", password: ""), core.NoEffect)
 }
 
 pub opaque type Action {
@@ -35,14 +35,8 @@ pub opaque type Action {
 
 fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
-    GotEmail(value) -> #(
-      State(..state, email: value),
-      core.PageEffect(effect.none()),
-    )
-    GotPassword(value) -> #(
-      State(..state, password: value),
-      core.PageEffect(effect.none()),
-    )
+    GotEmail(value) -> #(State(..state, email: value), core.NoEffect)
+    GotPassword(value) -> #(State(..state, password: value), core.NoEffect)
     SubmittedForm -> #(
       state,
       {
@@ -97,7 +91,7 @@ fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
       }
       |> core.PageEffect,
     )
-    Todo -> #(state, core.PageEffect(effect.none()))
+    Todo -> #(state, core.NoEffect)
   }
 }
 

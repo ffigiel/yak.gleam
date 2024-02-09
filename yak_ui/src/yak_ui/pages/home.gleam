@@ -1,4 +1,3 @@
-import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
 import yak_ui/core.{type AppEffect, type Page, Page}
@@ -12,7 +11,7 @@ pub opaque type State {
 }
 
 fn init() {
-  #(State, core.PageEffect(effect.none()))
+  #(State, core.NoEffect)
 }
 
 pub opaque type Action {
@@ -21,10 +20,10 @@ pub opaque type Action {
 
 fn update(state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
-    Todo -> #(state, core.PageEffect(effect.none()))
+    Todo -> #(state, core.NoEffect)
   }
 }
 
-fn view(state: State) -> Element(Action) {
+fn view(_state: State) -> Element(Action) {
   html.p([], [element.text("Welcome, user")])
 }

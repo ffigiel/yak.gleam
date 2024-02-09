@@ -13,6 +13,7 @@ pub type Page(state, action) {
 pub type AppEffect(action) {
   PageEffect(Effect(action))
   SharedEffect(SharedAction)
+  NoEffect
 }
 
 pub type SharedAction {
