@@ -22,6 +22,7 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
   }
 }
 
-fn view(_shared, _state: State) -> Element(Action) {
-  html.p([], [element.text("Welcome, user")])
+fn view(shared: core.SharedState, _state: State) -> Element(Action) {
+  let assert core.Authenticated(auth) = shared.auth
+  html.p([], [element.text("Welcome, " <> auth.user.email)])
 }
