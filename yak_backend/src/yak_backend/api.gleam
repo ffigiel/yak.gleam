@@ -9,6 +9,7 @@ import gleam/io
 import gleam/pgo
 import gleam/result
 import gleam/string
+import gleam/bytes_builder
 import yak_backend/api/app_request.{type AppRequest}
 import yak_backend/api/middleware
 import yak_backend/api/utils
@@ -23,12 +24,16 @@ pub fn stack(db: pgo.Connection) {
   |> middleware.log
   |> middleware.request_id
   |> middleware.app_request(db)
-  |> cors.middleware(
-    origins: ["https://yak.localhost:3000"],
-    methods: [Get, Post],
-    headers: ["Content-Type", "Set-Cookie"],
-    credentials: True,
-  )
+  |> cors_middleware()
+}
+
+fn cors_middleware() {
+  cors.config()
+  |> cors.allow_origins(["https://yak.localhost:3000"])
+  |> cors.allow_methods([Get, Post])
+  |> cors.allow_headers(["Content-Type", "Set-Cookie"])
+  |> cors.allow_credentials(True)
+  |> cors.to_middleware(bytes_builder.new())
 }
 
 fn service(request: AppRequest) {
