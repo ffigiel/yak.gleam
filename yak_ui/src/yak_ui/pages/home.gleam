@@ -2,9 +2,7 @@ import lustre/element.{type Element}
 import yak_ui/ffi
 import lustre/event
 import gleam/result
-import gleam/io
 import gleam/int
-import gleam/string
 import gleam/javascript/promise.{type Promise}
 import gleam/fetch
 import gleam/http
@@ -32,7 +30,6 @@ pub opaque type Action {
 }
 
 fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {
-  io.debug(action)
   case action {
     SubmittedLogoutForm -> #(
       state,
@@ -44,20 +41,16 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
       }),
     )
     GotLogoutResponse(Ok(Nil)) -> #(
-      State(..state, logging_out: False),
+      state,
       core.PageEffect({
         use _ <- effect.from
         ffi.reload_page()
         Nil
       }),
     )
-    GotLogoutResponse(Error(err)) -> #(
-      State(..state, logging_out: False, logout_error: option.Some(err)),
-      core.PageEffect({
-        use _ <- effect.from
-        io.debug(err)
-        Nil
-      }),
+    GotLogoutResponse(Error(msg)) -> #(
+      State(..state, logging_out: False, logout_error: option.Some(msg)),
+      core.NoEffect,
     )
   }
 }
