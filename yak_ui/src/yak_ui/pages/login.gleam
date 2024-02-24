@@ -1,4 +1,6 @@
-import gleam/dynamic
+import gleam/dynamic.{type Dynamic}
+import gleam/http/response.{type Response}
+import gleam/string
 import gleam/fetch
 import gleam/int
 import gleam/result
@@ -38,7 +40,7 @@ pub opaque type Action {
   GotEmail(value: String)
   GotPassword(value: String)
   SubmittedLoginForm
-  GotLoginResponse(Result(Nil, String))
+  GotLoginResponse(Result(yak_common.AppContextResponse, String))
 }
 
 fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {
@@ -57,13 +59,9 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
         Nil
       }),
     )
-    GotLoginResponse(Ok(Nil)) -> #(
+    GotLoginResponse(Ok(app_context)) -> #(
       state,
-      core.PageEffect({
-        use _ <- effect.from
-        ffi.reload_page()
-        Nil
-      }),
+      core.SharedEffect(core.GotAuthState(core.Authenticated(app_context))),
     )
     GotLoginResponse(Error(msg)) -> #(
       State(..state, logging_in: False, login_error: option.Some(msg)),
@@ -74,7 +72,7 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
 
 fn send_login_request(
   request: yak_common.LoginRequest,
-) -> Promise(Result(Nil, String)) {
+) -> Promise(Result(yak_common.AppContextResponse, String)) {
   let body =
     request
     |> yak_common.login_request_to_json
@@ -95,13 +93,44 @@ fn send_login_request(
     case result {
       Ok(response) ->
         case response.status {
-          200 -> promise.resolve(Ok(Nil))
+          200 ->
+            fetch.read_json_body(response)
+            |> handle_login_response
           _ ->
-            promise.resolve(Error(
-              "Unexpected status code: " <> int.to_string(response.status),
-            ))
+            fetch.read_text_body(response)
+            |> handle_unexpected_response
         }
       Error(err) -> promise.resolve(Error(api.fetch_error_to_string(err)))
+    }
+  })
+}
+
+fn handle_login_response(
+  promise: Promise(Result(Response(Dynamic), fetch.FetchError)),
+) -> Promise(Result(yak_common.AppContextResponse, String)) {
+  promise.map(promise, fn(result) {
+    result.map_error(result, api.fetch_error_to_string)
+    |> result.then(fn(response) {
+      response.body
+      |> yak_common.app_context_response_decoder()
+      |> result.map_error(string.inspect)
+    })
+  })
+}
+
+fn handle_unexpected_response(
+  promise: Promise(Result(Response(String), fetch.FetchError)),
+) -> Promise(Result(yak_common.AppContextResponse, String)) {
+  promise.map(promise, fn(result) {
+    case result {
+      Ok(response) ->
+        Error(
+          "Unexpected server response ("
+          <> int.to_string(response.status)
+          <> "): "
+          <> response.body,
+        )
+      Error(err) -> Error(api.fetch_error_to_string(err))
     }
   })
 }

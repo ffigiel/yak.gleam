@@ -70,8 +70,8 @@ fn login(request: AppRequest) {
   |> result.map(fn(req) {
     case core.login(request.db, req) {
       Ok(#(user, session_id)) -> {
-        yak_common.LoginResponse(email: user.email)
-        |> yak_common.login_response_to_json
+        yak_common.AppContextResponse(user: yak_common.User(email: user.email))
+        |> yak_common.app_context_response_to_json
         |> utils.string_response(200, _)
         |> response.prepend_header(
           "Set-Cookie",
