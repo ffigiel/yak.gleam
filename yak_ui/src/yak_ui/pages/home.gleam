@@ -108,7 +108,7 @@ fn view_logout_form(state: State) {
       ]),
       case state.logout_error {
         option.Some(msg) -> html.span([], [element.text(msg)])
-        option.None -> element.text("")
+        option.None -> element.none()
       },
     ]),
   ])
