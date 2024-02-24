@@ -2,19 +2,21 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yak</title>
-    <style>
-        html {
-            color-scheme: dark;
-        }
-    </style>
-    <script type="module" src="./main.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yak</title>
+  <style>
+    @media(prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+      }
+    }
+  </style>
+  <script type="module" src="./main.js"></script>
 </head>
 
 <body>
-    <div data-lustre-app></div>
+  <div data-lustre-app></div>
 </body>
 
 </html>
