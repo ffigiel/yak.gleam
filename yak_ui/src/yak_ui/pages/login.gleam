@@ -1,5 +1,5 @@
 import gleam/dynamic.{type Dynamic}
-import gleam/http/response.{type Response}
+import gleam/http/response.{type Response, Response}
 import gleam/string
 import gleam/fetch
 import gleam/int
@@ -88,18 +88,14 @@ fn send_login_request(
     fetch.make_options()
     |> fetch.with_credentials(fetch.Include)
   fetch.raw_send_with_options(request, options)
-  |> promise.map(fn(res) { result.map(res, fetch.from_fetch_response) })
   |> promise.await(fn(result) {
-    case result {
+    case result.map(result, fetch.from_fetch_response) {
+      Ok(Response(status: 200, ..) as response) ->
+        fetch.read_json_body(response)
+        |> handle_login_response
       Ok(response) ->
-        case response.status {
-          200 ->
-            fetch.read_json_body(response)
-            |> handle_login_response
-          _ ->
-            fetch.read_text_body(response)
-            |> handle_unexpected_response
-        }
+        fetch.read_text_body(response)
+        |> handle_unexpected_response
       Error(err) -> promise.resolve(Error(api.fetch_error_to_string(err)))
     }
   })

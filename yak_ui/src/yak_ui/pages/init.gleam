@@ -1,5 +1,5 @@
 import lustre/effect
-import gleam/http/response.{type Response}
+import gleam/http/response.{type Response, Response}
 import gleam/http
 import gleam/string
 import gleam/int
@@ -46,21 +46,17 @@ fn fetch_app_context() -> Promise(core.AuthState) {
     fetch.make_options()
     |> fetch.with_credentials(fetch.Include)
   fetch.raw_send_with_options(request, options)
-  |> promise.map(fn(res) { result.map(res, fetch.from_fetch_response) })
-  |> promise.await(fn(res) {
-    case res {
-      Ok(res) ->
-        case res.status {
-          200 ->
-            fetch.read_json_body(res)
-            |> handle_app_context_response
-          401 -> promise.resolve(core.Unauthenticated)
-          _ ->
-            fetch.read_text_body(res)
-            |> handle_unexpected_response
-        }
-      Error(e) -> {
-        api.fetch_error_to_string(e)
+  |> promise.await(fn(result) {
+    case result.map(result, fetch.from_fetch_response) {
+      Ok(Response(status: 200, ..) as response) ->
+        fetch.read_json_body(response)
+        |> handle_app_context_response
+      Ok(Response(status: 401, ..)) -> promise.resolve(core.Unauthenticated)
+      Ok(response) ->
+        fetch.read_text_body(response)
+        |> handle_unexpected_response
+      Error(err) -> {
+        api.fetch_error_to_string(err)
         |> core.AuthError
         |> promise.resolve
       }
