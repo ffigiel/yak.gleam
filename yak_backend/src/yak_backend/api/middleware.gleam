@@ -41,8 +41,8 @@ pub fn log(service: AppService) -> AppService {
 fn prepare_log_line(request: AppRequest, response: Response(b)) -> String {
   string.concat([
     request.http.method
-    |> http.method_to_string
-    |> string.uppercase,
+      |> http.method_to_string
+      |> string.uppercase,
     " ",
     int.to_string(response.status),
     " ",
