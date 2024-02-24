@@ -1,21 +1,14 @@
-import gleam/dynamic.{type Dynamic}
-import gleam/http/response.{type Response, Response}
-import gleam/string
-import gleam/fetch
-import gleam/int
-import gleam/result
-import gleam/http
-import gleam/http/request
 import lustre/attribute
 import lustre/effect
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import gleam/option.{type Option}
+import gleam/dynamic
 import yak_common
 import yak_ui/ffi
 import yak_ui/core.{type AppEffect, type Page, Page}
-import gleam/javascript/promise.{type Promise}
+import gleam/javascript/promise
 import yak_ui/api
 
 pub const page = Page(init: init, update: update, view: view)
@@ -51,7 +44,7 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
       State(..state, logging_in: True, login_error: option.None),
       core.PageEffect({
         use dispatch <- effect.from
-        send_login_request(yak_common.LoginRequest(
+        api.send_login_request(yak_common.LoginRequest(
           email: state.email,
           password: state.password,
         ))
@@ -68,67 +61,6 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
       core.NoEffect,
     )
   }
-}
-
-fn send_login_request(
-  request: yak_common.LoginRequest,
-) -> Promise(Result(yak_common.AppContextResponse, String)) {
-  let body =
-    request
-    |> yak_common.login_request_to_json
-  let request =
-    request.new()
-    |> request.set_method(http.Post)
-    |> request.set_scheme(http.Https)
-    |> request.set_host("api.yak.localhost:3000")
-    |> request.set_path("login")
-    |> request.set_body(body)
-    |> fetch.to_fetch_request()
-  let options =
-    fetch.make_options()
-    |> fetch.with_credentials(fetch.Include)
-  fetch.raw_send_with_options(request, options)
-  |> promise.await(fn(result) {
-    case result.map(result, fetch.from_fetch_response) {
-      Ok(Response(status: 200, ..) as response) ->
-        fetch.read_json_body(response)
-        |> handle_login_response
-      Ok(response) ->
-        fetch.read_text_body(response)
-        |> handle_unexpected_response
-      Error(err) -> promise.resolve(Error(api.fetch_error_to_string(err)))
-    }
-  })
-}
-
-fn handle_login_response(
-  promise: Promise(Result(Response(Dynamic), fetch.FetchError)),
-) -> Promise(Result(yak_common.AppContextResponse, String)) {
-  promise.map(promise, fn(result) {
-    result.map_error(result, api.fetch_error_to_string)
-    |> result.then(fn(response) {
-      response.body
-      |> yak_common.app_context_response_decoder()
-      |> result.map_error(string.inspect)
-    })
-  })
-}
-
-fn handle_unexpected_response(
-  promise: Promise(Result(Response(String), fetch.FetchError)),
-) -> Promise(Result(yak_common.AppContextResponse, String)) {
-  promise.map(promise, fn(result) {
-    case result {
-      Ok(response) ->
-        Error(
-          "Unexpected server response ("
-          <> int.to_string(response.status)
-          <> "): "
-          <> response.body,
-        )
-      Error(err) -> Error(api.fetch_error_to_string(err))
-    }
-  })
 }
 
 fn view(_shared, state: State) -> Element(Action) {
