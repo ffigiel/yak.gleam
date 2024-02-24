@@ -9,6 +9,7 @@ import gleam/http/request
 import lustre/element.{type Element}
 import lustre/element/html
 import yak_ui/core.{type AppEffect, type Page, Page}
+import yak_ui/api
 import yak_common
 import gleam/fetch
 import gleam/javascript/promise.{type Promise}
@@ -59,7 +60,7 @@ fn fetch_app_context() -> Promise(core.AuthState) {
             |> handle_unexpected_response
         }
       Error(e) -> {
-        from_fetch_error_to_string(e)
+        api.fetch_error_to_string(e)
         |> core.AuthError
         |> promise.resolve
       }
@@ -72,7 +73,7 @@ fn handle_app_context_response(
 ) -> Promise(core.AuthState) {
   promise.map(promise, fn(result) {
     result.map_error(result, fn(e) {
-      from_fetch_error_to_string(e)
+      api.fetch_error_to_string(e)
       |> core.AuthError
     })
     |> result.then(fn(response) {
@@ -95,25 +96,17 @@ fn handle_unexpected_response(
     result.map(result, fn(response) {
       core.AuthError(
         "Unexpected server response ("
-          <> int.to_string(response.status)
-          <> "): "
-          <> response.body,
+        <> int.to_string(response.status)
+        <> "): "
+        <> response.body,
       )
     })
     |> result.map_error(fn(e) {
-      from_fetch_error_to_string(e)
+      api.fetch_error_to_string(e)
       |> core.AuthError
     })
     |> result.unwrap_both
   })
-}
-
-fn from_fetch_error_to_string(e: fetch.FetchError) -> String {
-  case e {
-    fetch.NetworkError(msg) -> "Network Error: " <> msg
-    fetch.UnableToReadBody -> "Unable to read response body"
-    fetch.InvalidJsonBody -> "Invalid JSON response"
-  }
 }
 
 pub opaque type Action {

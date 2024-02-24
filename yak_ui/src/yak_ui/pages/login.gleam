@@ -27,7 +27,6 @@ pub opaque type Action {
   GotEmail(value: String)
   GotPassword(value: String)
   SubmittedForm
-  SubmittedLogoutForm
   Todo
 }
 
@@ -38,69 +37,41 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
     SubmittedForm -> #(
       state,
       {
-        use dispatch <- effect.from
-        let body =
-          yak_common.LoginRequest(email: state.email, password: state.password)
-          |> yak_common.login_request_to_json
-        let request =
-          request.new()
-          |> request.set_method(http.Post)
-          |> request.set_scheme(http.Https)
-          |> request.set_host("api.yak.localhost:3000")
-          |> request.set_path("login")
-          |> request.set_body(body)
-          |> fetch.to_fetch_request()
-        let options =
-          fetch.make_options()
-          |> fetch.with_credentials(fetch.Include)
-        let response =
-          request
-          |> fetch.raw_send_with_options(options)
-          |> promise.try_await(fn(resp) {
-            promise.resolve(Ok(fetch.from_fetch_response(resp)))
-          })
-        io.debug(response)
-        dispatch(Todo)
-      }
-      |> core.PageEffect,
-    )
-    SubmittedLogoutForm -> #(
-      state,
-      {
-        use dispatch <- effect.from
-        let request =
-          request.new()
-          |> request.set_method(http.Post)
-          |> request.set_scheme(http.Https)
-          |> request.set_host("api.yak.localhost:3000")
-          |> request.set_path("logout")
-          |> fetch.to_fetch_request()
-        let options =
-          fetch.make_options()
-          |> fetch.with_credentials(fetch.Include)
-        let response =
-          request
-          |> fetch.raw_send_with_options(options)
-          |> promise.try_await(fn(resp) {
-            promise.resolve(Ok(fetch.from_fetch_response(resp)))
-          })
-        io.debug(response)
-        dispatch(Todo)
-      }
-      |> core.PageEffect,
+          use dispatch <- effect.from
+          let body =
+            yak_common.LoginRequest(
+              email: state.email,
+              password: state.password,
+            )
+            |> yak_common.login_request_to_json
+          let request =
+            request.new()
+            |> request.set_method(http.Post)
+            |> request.set_scheme(http.Https)
+            |> request.set_host("api.yak.localhost:3000")
+            |> request.set_path("login")
+            |> request.set_body(body)
+            |> fetch.to_fetch_request()
+          let options =
+            fetch.make_options()
+            |> fetch.with_credentials(fetch.Include)
+          let response =
+            request
+            |> fetch.raw_send_with_options(options)
+            |> promise.try_await(fn(resp) {
+              promise.resolve(Ok(fetch.from_fetch_response(resp)))
+            })
+          io.debug(response)
+          dispatch(Todo)
+        }
+        |> core.PageEffect,
     )
     Todo -> #(state, core.NoEffect)
   }
 }
 
 fn view(_shared, state: State) -> Element(Action) {
-  html.div([], [view_logout_form(state), view_login_form(state)])
-}
-
-fn view_logout_form(_state: State) {
-  html.form([handle_submit(SubmittedLogoutForm)], [
-    html.p([], [html.button([], [element.text("Logout")])]),
-  ])
+  html.div([], [view_login_form(state)])
 }
 
 fn view_login_form(state: State) {
