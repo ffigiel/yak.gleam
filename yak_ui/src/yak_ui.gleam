@@ -1,15 +1,16 @@
 import gleam/io
-import yak_ui/core.{
-  type AppEffect, type Route, type SharedAction, NoEffect, PageEffect,
-  SharedEffect,
-}
+import gleam/javascript/promise
+import yak_ui/core.{type AppEffect, type Route, type SharedAction}
 import gleam/string
+import gleam/option
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element
 import yak_ui/pages/home
 import yak_ui/pages/init
 import yak_ui/pages/login
+import yak_ui/api
+import yak_ui/ffi
 
 pub fn main() {
   let app = lustre.application(init_app, update, view)
@@ -63,16 +64,21 @@ fn effect_from_app_effect(
   page_action_ctor: fn(action) -> PageAction,
 ) -> Effect(AppAction) {
   case fx {
-    PageEffect(fx) ->
+    core.PageEffect(fx) ->
       effect.map(fx, fn(a) { GotPageAction(page_action_ctor(a)) })
-    SharedEffect(a) ->
+    core.SharedEffect(a) ->
       effect.from(fn(dispatch) { dispatch(GotSharedAction(a)) })
-    NoEffect -> effect.none()
+    core.NoEffect -> effect.none()
   }
 }
 
 fn init_app(_flags) {
-  let shared = core.SharedState(auth: core.AuthLoading)
+  let shared =
+    core.SharedState(
+      auth: core.AuthLoading,
+      logging_out: False,
+      logout_error: option.None,
+    )
   State(page: InitState(init.page.init(shared).0), shared: shared)
   |> set_page(core.InitRoute)
 }
@@ -80,24 +86,64 @@ fn init_app(_flags) {
 pub type AppAction {
   GotPageAction(PageAction)
   GotSharedAction(SharedAction)
+  GotNavigation(Route)
 }
 
 fn update(state: State, action: AppAction) {
   case #(state.page, action) {
-    #(_, GotSharedAction(core.GotAuthState(auth_state))) -> {
-      let shared = core.SharedState(..state.shared, auth: auth_state)
-      let state = State(..state, shared: shared)
-      case auth_state {
-        core.Authenticated(_) -> set_page(state, core.HomeRoute)
-        core.Unauthenticated -> set_page(state, core.LoginRoute)
-        // Other states are handled on the Init page
-        _ -> #(state, effect.none())
-      }
-    }
     #(page, GotPageAction(page_action)) -> {
       let #(page, effect) = update_page(state.shared, page, page_action)
       #(State(..state, page: page), effect)
     }
+    #(_, GotSharedAction(shared_action)) -> {
+      let #(new_shared_state, app_effect) =
+        update_shared(state.shared, shared_action)
+      #(State(..state, shared: new_shared_state), app_effect)
+    }
+    #(_, GotNavigation(route)) -> set_page(state, route)
+  }
+}
+
+fn update_shared(
+  state: core.SharedState,
+  action: core.SharedAction,
+) -> #(core.SharedState, Effect(AppAction)) {
+  case action {
+    core.GotAuthState(auth_state) -> {
+      let effect = case auth_state {
+        core.Authenticated(_) ->
+          effect.from(fn(dispatch) { dispatch(GotNavigation(core.HomeRoute)) })
+        core.Unauthenticated ->
+          effect.from(fn(dispatch) { dispatch(GotNavigation(core.LoginRoute)) })
+        // Other states are handled on the Init page
+        _ -> effect.none()
+      }
+      #(core.SharedState(..state, auth: auth_state), effect)
+    }
+    core.LogoutClicked -> #(
+      core.SharedState(..state, logging_out: True, logout_error: option.None),
+      {
+        use dispatch <- effect.from
+        api.send_logout_request()
+        |> promise.map(fn(result) {
+          dispatch(GotSharedAction(core.GotLogoutResponse(result)))
+        })
+        Nil
+      },
+    )
+    core.GotLogoutResponse(Ok(Nil)) -> #(state, {
+      use _ <- effect.from
+      ffi.reload_page()
+      Nil
+    })
+    core.GotLogoutResponse(Error(msg)) -> #(
+      core.SharedState(
+        ..state,
+        logging_out: False,
+        logout_error: option.Some(msg),
+      ),
+      effect.none(),
+    )
   }
 }
 

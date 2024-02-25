@@ -151,3 +151,31 @@ fn handle_unexpected_login_response(
     }
   })
 }
+
+pub fn send_logout_request() -> Promise(Result(Nil, String)) {
+  let request =
+    request.new()
+    |> request.set_method(http.Post)
+    |> request.set_scheme(http.Https)
+    |> request.set_host("api.yak.localhost:3000")
+    |> request.set_path("logout")
+    |> fetch.to_fetch_request()
+  let options =
+    fetch.make_options()
+    |> fetch.with_credentials(fetch.Include)
+  fetch.raw_send_with_options(request, options)
+  |> promise.map(fn(res) { result.map(res, fetch.from_fetch_response) })
+  |> promise.await(fn(result) {
+    case result {
+      Ok(response) ->
+        case response.status {
+          200 -> promise.resolve(Ok(Nil))
+          _ ->
+            promise.resolve(Error(
+              "Unexpected status code: " <> int.to_string(response.status),
+            ))
+        }
+      Error(err) -> promise.resolve(Error(fetch_error_to_string(err)))
+    }
+  })
+}

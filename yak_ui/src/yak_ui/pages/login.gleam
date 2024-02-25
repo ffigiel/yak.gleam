@@ -30,6 +30,7 @@ fn init(_shared) {
 }
 
 pub opaque type Action {
+  SharedAction(core.SharedAction)
   GotEmail(value: String)
   GotPassword(value: String)
   SubmittedLoginForm
@@ -38,6 +39,7 @@ pub opaque type Action {
 
 fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {
   case action {
+    SharedAction(a) -> #(state, core.SharedEffect(a))
     GotEmail(value) -> #(State(..state, email: value), core.NoEffect)
     GotPassword(value) -> #(State(..state, password: value), core.NoEffect)
     SubmittedLoginForm -> #(
@@ -63,8 +65,8 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
   }
 }
 
-fn view(_shared, state: State) -> Element(Action) {
-  html.div([], [view_login_form(state)])
+fn view(shared, state: State) -> Element(Action) {
+  core.layout(shared, SharedAction, [view_login_form(state)])
 }
 
 fn view_login_form(state: State) {
