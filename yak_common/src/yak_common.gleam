@@ -1,29 +1,29 @@
 import gleam/json.{type Json}
 import gleam/dynamic.{type Decoder}
 
-pub type AppContextResponse {
-  AppContextResponse(user: User)
+pub type AppContext {
+  AppContext(user: User)
 }
 
 pub type User {
   User(email: String)
 }
 
-pub fn app_context_response_from_json(
+pub fn app_context_from_json(
   string: String,
-) -> Result(AppContextResponse, json.DecodeError) {
-  json.decode(from: string, using: app_context_response_decoder())
+) -> Result(AppContext, json.DecodeError) {
+  json.decode(from: string, using: app_context_decoder())
 }
 
-pub fn app_context_response_decoder() -> Decoder(AppContextResponse) {
-  dynamic.decode1(AppContextResponse, dynamic.field("user", user_decoder()))
+pub fn app_context_decoder() -> Decoder(AppContext) {
+  dynamic.decode1(AppContext, dynamic.field("user", user_decoder()))
 }
 
 fn user_decoder() -> Decoder(User) {
   dynamic.decode1(User, dynamic.field("email", dynamic.string))
 }
 
-pub fn app_context_response_to_json(obj: AppContextResponse) -> String {
+pub fn app_context_to_json(obj: AppContext) -> String {
   json.object([#("user", user_to_json(obj.user))])
   |> json.to_string
 }

@@ -34,7 +34,7 @@ pub opaque type Action {
   GotEmail(value: String)
   GotPassword(value: String)
   SubmittedLoginForm
-  GotLoginResponse(Result(yak_common.AppContextResponse, String))
+  GotLoginResponse(Result(yak_common.AppContext, String))
 }
 
 fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) {

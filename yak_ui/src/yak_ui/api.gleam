@@ -36,11 +36,11 @@ pub fn fetch_app_context() -> Promise(core.AuthState) {
     case result.map(result, fetch.from_fetch_response) {
       Ok(Response(status: 200, ..) as response) ->
         fetch.read_json_body(response)
-        |> handle_app_context_response
+        |> handle_app_context
       Ok(Response(status: 401, ..)) -> promise.resolve(core.Unauthenticated)
       Ok(response) ->
         fetch.read_text_body(response)
-        |> handle_unexpected_app_context_response
+        |> handle_unexpected_app_context
       Error(err) -> {
         fetch_error_to_string(err)
         |> core.AuthError
@@ -50,7 +50,7 @@ pub fn fetch_app_context() -> Promise(core.AuthState) {
   })
 }
 
-fn handle_app_context_response(
+fn handle_app_context(
   promise: Promise(Result(Response(Dynamic), fetch.FetchError)),
 ) -> Promise(core.AuthState) {
   promise.map(promise, fn(result) {
@@ -60,7 +60,7 @@ fn handle_app_context_response(
     })
     |> result.then(fn(response) {
       response.body
-      |> yak_common.app_context_response_decoder()
+      |> yak_common.app_context_decoder()
       |> result.map_error(fn(e) {
         string.inspect(e)
         |> core.AuthError
@@ -71,7 +71,7 @@ fn handle_app_context_response(
   })
 }
 
-fn handle_unexpected_app_context_response(
+fn handle_unexpected_app_context(
   promise: Promise(Result(Response(String), fetch.FetchError)),
 ) -> Promise(core.AuthState) {
   promise.map(promise, fn(result) {
@@ -93,7 +93,7 @@ fn handle_unexpected_app_context_response(
 
 pub fn send_login_request(
   request: yak_common.LoginRequest,
-) -> Promise(Result(yak_common.AppContextResponse, String)) {
+) -> Promise(Result(yak_common.AppContext, String)) {
   let body =
     request
     |> yak_common.login_request_to_json
@@ -124,12 +124,12 @@ pub fn send_login_request(
 
 fn handle_login_response(
   promise: Promise(Result(Response(Dynamic), fetch.FetchError)),
-) -> Promise(Result(yak_common.AppContextResponse, String)) {
+) -> Promise(Result(yak_common.AppContext, String)) {
   promise.map(promise, fn(result) {
     result.map_error(result, fetch_error_to_string)
     |> result.then(fn(response) {
       response.body
-      |> yak_common.app_context_response_decoder()
+      |> yak_common.app_context_decoder()
       |> result.map_error(string.inspect)
     })
   })
@@ -137,7 +137,7 @@ fn handle_login_response(
 
 fn handle_unexpected_login_response(
   promise: Promise(Result(Response(String), fetch.FetchError)),
-) -> Promise(Result(yak_common.AppContextResponse, String)) {
+) -> Promise(Result(yak_common.AppContext, String)) {
   promise.map(promise, fn(result) {
     case result {
       Ok(response) ->

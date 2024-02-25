@@ -34,7 +34,7 @@ pub type SharedState {
 pub type AuthState {
   AuthLoading
   AuthError(String)
-  Authenticated(yak_common.AppContextResponse)
+  Authenticated(yak_common.AppContext)
   Unauthenticated
 }
 
@@ -73,7 +73,7 @@ fn anonymous_layout(
 }
 
 fn authenticated_layout(
-  app_context: yak_common.AppContextResponse,
+  app_context: yak_common.AppContext,
   shared_state: SharedState,
   from_shared_action: fn(SharedAction) -> a,
   contents: List(Element(a)),
