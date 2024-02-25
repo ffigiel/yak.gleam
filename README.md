@@ -1,24 +1,29 @@
 # yak
 
-[![Package Version](https://img.shields.io/hexpm/v/yak)](https://hex.pm/packages/yak)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/yak/)
+Exploring what it's like to develop a fullstack app in [Gleam](https://gleam.run/)
 
-A Gleam project
+## Overview
 
-## Quick start
+- Automatic rebuild with [Watchexec](https://watchexec.github.io/)
+- [Caddy](https://caddyserver.com/) as a dev server with local HTTPS
+- UI is written in [Lustre](https://lustre.build/) (and my ham-fisted attempt at recreating the app structure of [elm-spa](https://www.elm-spa.dev/) but without routing) and is built with [Vite](https://vitejs.dev/)
+- Backend uses [elli](https://github.com/gleam-lang/elli) and docker-compose for managing the database (and other services in the future)
+- Features a shared module with common types and json codecs/decoders
+- Uses my WIP [CORS library](https://github.com/ffigiel/gleam_cors) (and my fork of [gleam/fetch](https://github.com/ffigiel/fetch) to add support for session cookies)
 
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-gleam shell # Run an Erlang shell
-```
+## Development
 
-## Installation
+**Initial setup**
 
-If available on Hex this package can be added to your Gleam project:
+- run `make db-reset` to initialize the project's database (see `yak_backend/reset.sql`)
+- `cd yak_ui` and `npm install`
+- clone `ffigiel/gleam_cors` and `ffigiel/fetch` adjacent to this project's directory
+- add `127.0.0.1 yak.localhost api.yak.localhost` to your hosts file
 
-```sh
-gleam add yak
-```
+**Development**
 
-and its documentation can be found at <https://hexdocs.pm/yak>.
+Run `make` to start a dev server and navigate to `https://yak.localhost:3000/`
+
+**Testing**
+
+You can run tests via `make test` or `make test-watch`
