@@ -2,7 +2,7 @@ import lustre/effect.{type Effect}
 import yak_ui/ffi
 import lustre/event
 import lustre/element/html
-import lustre/attribute.{type Attribute}
+import lustre/attribute
 import gleam/option.{type Option}
 import lustre/element.{type Element}
 import yak_common
@@ -62,8 +62,8 @@ pub fn layout(
 }
 
 fn anonymous_layout(
-  shared_state: SharedState,
-  from_shared_action: fn(SharedAction) -> a,
+  _shared_state: SharedState,
+  _from_shared_action: fn(SharedAction) -> a,
   contents: List(Element(a)),
 ) {
   html.div([], [

@@ -5,12 +5,10 @@ import gleam/http/request
 import gleam/http/response.{type Response, Response}
 import gleam/int
 import gleam/javascript/promise.{type Promise}
-import gleam/option.{type Option}
 import gleam/result
 import gleam/string
 import yak_common
-import yak_ui/core.{type AppEffect, type Page, Page}
-import yak_ui/ffi
+import yak_ui/core
 
 pub fn fetch_error_to_string(e: fetch.FetchError) -> String {
   case e {

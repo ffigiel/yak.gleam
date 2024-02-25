@@ -1,18 +1,6 @@
 import lustre/element.{type Element}
-import yak_ui/ffi
-import lustre/event
-import gleam/result
-import gleam/int
-import gleam/javascript/promise.{type Promise}
-import gleam/fetch
-import gleam/http
-import gleam/http/request
-import lustre/effect
 import lustre/element/html
-import lustre/attribute
-import gleam/option.{type Option}
 import yak_ui/core.{type AppEffect, type Page, Page}
-import yak_ui/api
 
 pub const page = Page(init: init, update: update, view: view)
 
@@ -34,7 +22,6 @@ fn update(_shared, state: State, action: Action) -> #(State, AppEffect(Action)) 
   }
 }
 
-fn view(shared: core.SharedState, state: State) -> Element(Action) {
-  let assert core.Authenticated(auth) = shared.auth
+fn view(shared: core.SharedState, _state: State) -> Element(Action) {
   core.layout(shared, SharedAction, [html.h1([], [element.text("Home page")])])
 }
